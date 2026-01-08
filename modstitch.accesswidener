@@ -1,0 +1,21 @@
+accessWidener v1 named
+
+accessible class net/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen$SlotWrapper
+accessible method net/minecraft/world/item/CreativeModeTab <init> (Lnet/minecraft/world/item/CreativeModeTab$Row;ILnet/minecraft/world/item/CreativeModeTab$Type;Lnet/minecraft/network/chat/Component;Ljava/util/function/Supplier;Lnet/minecraft/world/item/CreativeModeTab$DisplayItemsGenerator;)V
+accessible field net/minecraft/world/item/CreativeModeTab$Builder EMPTY_GENERATOR Lnet/minecraft/world/item/CreativeModeTab$DisplayItemsGenerator;
+accessible field net/minecraft/world/item/CreativeModeTab$Builder displayName Lnet/minecraft/network/chat/Component;
+accessible field net/minecraft/world/item/CreativeModeTab$Builder iconGenerator Ljava/util/function/Supplier;
+accessible field net/minecraft/world/item/CreativeModeTab canScroll Z
+accessible field net/minecraft/world/item/CreativeModeTab$Builder showTitle Z
+accessible field net/minecraft/world/item/CreativeModeTab showTitle Z
+accessible field net/minecraft/world/item/CreativeModeTab alignedRight Z
+accessible field net/minecraft/world/item/CreativeModeTab$Builder backgroundTexture Lnet/minecraft/resources/Identifier;
+accessible field net/minecraft/world/item/CreativeModeTab backgroundTexture Lnet/minecraft/resources/Identifier;
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen leftPos I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen topPos I
+accessible field net/minecraft/client/gui/screens/inventory/AnvilScreen TEXT_FIELD_SPRITE Lnet/minecraft/resources/Identifier;
+accessible field net/minecraft/client/gui/screens/inventory/AnvilScreen TEXT_FIELD_DISABLED_SPRITE Lnet/minecraft/resources/Identifier;
+accessible field net/minecraft/client/gui/screens/inventory/AnvilScreen ERROR_SPRITE Lnet/minecraft/resources/Identifier;
+accessible method net/minecraft/client/gui/screens/Screen addRenderableWidget (Lnet/minecraft/client/gui/components/events/GuiEventListener;)Lnet/minecraft/client/gui/components/events/GuiEventListener;
+accessible method net/minecraft/client/gui/screens/Screen removeWidget (Lnet/minecraft/client/gui/components/events/GuiEventListener;)V
+accessible method net/minecraft/world/inventory/AbstractContainerMenu moveItemStackTo (Lnet/minecraft/world/item/ItemStack;IIZ)Z
