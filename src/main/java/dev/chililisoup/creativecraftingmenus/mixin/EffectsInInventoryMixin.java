@@ -11,6 +11,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 
+import static dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus.TAB_SPACING;
+
 @Mixin(EffectsInInventory.class)
 public abstract class EffectsInInventoryMixin {
     @Shadow private @Final AbstractContainerScreen<?> screen;
@@ -20,7 +22,7 @@ public abstract class EffectsInInventoryMixin {
     @Expression("this.screen.imageWidth")
     @ModifyExpressionValue(method = "canSeeEffects", at = @At("MIXINEXTRAS:EXPRESSION"))
     private int adjustCanSeeEffectsX(int original) {
-        return screen instanceof CreativeModeInventoryScreen ? original + 36 : original;
+        return screen instanceof CreativeModeInventoryScreen ? original + 24 + 2 * TAB_SPACING : original;
     }
 
     @Definition(id = "screen", field = "Lnet/minecraft/client/gui/screens/inventory/EffectsInInventory;screen:Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;")
@@ -28,6 +30,6 @@ public abstract class EffectsInInventoryMixin {
     @Expression("this.screen.imageWidth")
     @ModifyExpressionValue(method = "render", at = @At("MIXINEXTRAS:EXPRESSION"))
     private int adjustRenderX(int original) {
-        return screen instanceof CreativeModeInventoryScreen ? original + 36 : original;
+        return screen instanceof CreativeModeInventoryScreen ? original + 24 + 2 * TAB_SPACING : original;
     }
 }

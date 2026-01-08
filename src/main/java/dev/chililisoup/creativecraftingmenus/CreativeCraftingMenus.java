@@ -10,6 +10,7 @@ import net.fabricmc.api.ClientModInitializer;
 public class CreativeCraftingMenus implements ClientModInitializer {
     public static final String MOD_ID = "creativecraftingmenus";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
+    public static int TAB_SPACING = 9;
 
     public static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(MOD_ID, path);

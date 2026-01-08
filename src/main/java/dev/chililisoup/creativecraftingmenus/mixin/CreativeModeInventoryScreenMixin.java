@@ -12,6 +12,7 @@ import dev.chililisoup.creativecraftingmenus.reg.CreativeMenuTabs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeInventoryListener;
@@ -42,6 +43,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import static dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus.TAB_SPACING;
 
 @Mixin(value = CreativeModeInventoryScreen.class, priority = 999)
 public abstract class CreativeModeInventoryScreenMixin extends AbstractContainerScreen<CreativeModeInventoryScreen.@NotNull ItemPickerMenu> {
@@ -86,6 +89,18 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     private void menuTabSubInit(CallbackInfo ci) {
         if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab)
             menuTab.subInit();
+
+        this.addRenderableWidget(new AbstractSliderButton(this.leftPos, 4, this.imageWidth, 20, Component.literal("9"), 9.0 / 16.0) {
+            @Override
+            protected void updateMessage() {
+                this.setMessage(Component.literal(String.valueOf(Math.round(this.value * 16.0))));
+            }
+
+            @Override
+            protected void applyValue() {
+                TAB_SPACING = (int) Math.round(this.value * 16.0);
+            }
+        });
     }
 
     @Inject(method = "selectTab", at = @At("HEAD"))
@@ -113,7 +128,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
 
     @Inject(method = "getTabX", at = @At("HEAD"), cancellable = true)
     private void getMenuTabX(CreativeModeTab tab, CallbackInfoReturnable<Integer> cir) {
-        if (tab instanceof CreativeMenuTab) cir.setReturnValue(this.imageWidth + 9);
+        if (tab instanceof CreativeMenuTab) cir.setReturnValue(this.imageWidth + TAB_SPACING);
     }
 
     @Inject(method = "getTabY", at = @At("HEAD"), cancellable = true)
@@ -121,9 +136,9 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
         if (tab instanceof CreativeMenuTab) {
             int count = CreativeMenuTabs.MENU_TABS.size();
             int index = CreativeMenuTabs.MENU_TABS.indexOf(tab);
-            int size = (count - 1) * 10 + count * 26;
+            int size = (count - 1) * TAB_SPACING + count * 26;
             int top = (this.height - size) / 2;
-            cir.setReturnValue(top + index * 36 - this.topPos);
+            cir.setReturnValue(top + index * (26 + TAB_SPACING) - this.topPos);
         }
     }
 
@@ -150,15 +165,16 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             value = "INVOKE",
             target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)V"
     ))
-    private void drawMenuTabTitle(GuiGraphics guiGraphics, Font font, Component title, int x, int y, int color, boolean bl, Operation<Void> original) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab)
+    private void drawMenuTabLabels(GuiGraphics guiGraphics, Font font, Component title, int x, int y, int color, boolean bl, Operation<Void> original) {
+        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab) {
             menuTab.drawTitle(
                     (mX, mY, mColor) -> original.call(guiGraphics, font, title, mX, mY, mColor, bl),
                     x,
                     y,
                     color
             );
-        else original.call(guiGraphics, font, title, x, y, color, bl);
+            guiGraphics.drawString(font, this.playerInventoryTitle, 9, this.imageHeight - 94, color, bl);
+        } else original.call(guiGraphics, font, title, x, y, color, bl);
     }
     
     @Inject(method = "renderBg", at = @At("TAIL"))

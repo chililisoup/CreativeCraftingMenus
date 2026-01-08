@@ -7,7 +7,6 @@ import net.fabricmc.fabric.impl.client.itemgroup.FabricCreativeGuiComponents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -24,35 +23,30 @@ public class CreativeMenuTabs {
                         AnvilMenuTab::new,
                         "anvil_menu",
                         "container.repair",
-                        CreativeCraftingMenus.id("textures/gui/container/creative_anvil_menu.png"),
                         Items.ANVIL::getDefaultInstance
                 ),
                 register(
                         CraftingMenuTab::new,
                         "cartography_menu",
-                        "container.repair",
-                        CreativeCraftingMenus.id("textures/gui/container/creative_anvil_menu.png"),
+                        "container.cartography_table",
                         Items.CARTOGRAPHY_TABLE::getDefaultInstance
                 ),
                 register(
                         CraftingMenuTab::new,
                         "crafting_menu",
                         "container.crafting",
-                        CreativeCraftingMenus.id("textures/gui/container/creative_crafting_menu.png"),
                         Items.CRAFTING_TABLE::getDefaultInstance
                 ),
                 register(
                         CraftingMenuTab::new,
                         "loom_menu",
-                        "container.repair",
-                        CreativeCraftingMenus.id("textures/gui/container/creative_anvil_menu.png"),
+                        "container.loom",
                         Items.LOOM::getDefaultInstance
                 ),
                 register(
                         CraftingMenuTab::new,
                         "smithing_menu",
-                        "container.repair",
-                        CreativeCraftingMenus.id("textures/gui/container/creative_anvil_menu.png"),
+                        "container.upgrade",
                         Items.SMITHING_TABLE::getDefaultInstance
                 )
         );
@@ -62,12 +56,13 @@ public class CreativeMenuTabs {
             CreativeMenuTab.MenuTabConstructor<T> constructor,
             String name,
             String translationKey,
-            Identifier backgroundTexture,
             Supplier<ItemStack> iconGenerator
     ) {
         T menuTab = new CreativeMenuTab.Builder<>(constructor)
                 .title(Component.translatable(translationKey))
-                .backgroundTexture(backgroundTexture)
+                .backgroundTexture(CreativeCraftingMenus.id(
+                        String.format("textures/gui/container/creative_%s.png", name)
+                ))
                 .icon(iconGenerator)
                 .build();
 
