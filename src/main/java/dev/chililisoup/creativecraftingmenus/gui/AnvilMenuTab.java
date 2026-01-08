@@ -57,11 +57,11 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu, Anv
     }
 
     @Override
-    public void dispose() {
+    public void remove() {
         if (this.screen != null && this.name != null)
             this.screen.removeWidget(this.name);
         this.name = null;
-        super.dispose();
+        super.remove();
     }
 
     @Override
@@ -141,6 +141,11 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu, Anv
         }
 
         @Override
+        AnvilTabMenu copyWithPlayer(@NotNull Player player) {
+            return this.copyContentsTo(new AnvilTabMenu(this.menuTab, player));
+        }
+
+        @Override
         public @NotNull ItemStack quickMoveFromInventory(@NotNull Player player, int slotIndex) {
             ItemStack resultStack = ItemStack.EMPTY;
             Slot slot = this.player.inventoryMenu.slots.get(slotIndex);
@@ -169,6 +174,12 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu, Anv
                 this.inputSlots.clearContent();
                 this.menuTab.firstSlotChanged(this.inputSlots.getItem(0));
             }
+        }
+
+        @Override
+        public void removed(@NotNull Player player) {
+            if (player.hasInfiniteMaterials()) for (int i = 0; i < this.inputSlots.getContainerSize(); i++)
+                player.getInventory().placeItemBackInInventory(this.inputSlots.removeItemNoUpdate(i));
         }
 
         public void setItemName(String string) {

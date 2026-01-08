@@ -29,19 +29,27 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
 
     public final void init(AbstractContainerScreen<?> screen, Player player) {
         this.screen = screen;
-        if (this.menu == null || this.menu.player != player)
+        if (this.menu == null)
             //noinspection unchecked
             this.menu = this.menuConstructor.accept((T) this, player);
+        else if (this.menu.player != player)
+            //noinspection unchecked
+            this.menu = (M) this.menu.copyWithPlayer(player);
     }
 
     public void subInit() {}
 
-    public void dispose() {
+    public void remove() {
         if (this.menu != null) {
             this.menu.removed(this.menu.player);
             this.menu = null;
         }
         this.screen = null;
+    }
+
+    public void dispose() {
+        this.screen = null;
+        this.menu = null;
     }
 
     public boolean keyPressed(KeyEvent keyEvent) {
@@ -90,6 +98,18 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
             this.player = player;
         }
 
+        abstract CreativeTabMenu<T> copyWithPlayer(@NotNull Player player);
+
+        protected <M extends CreativeTabMenu<T>> M copyContentsTo(M other) {
+            other.initializeContents(
+                    this.getStateId(),
+                    this.slots.stream().map(Slot::getItem).toList(),
+                    this.getCarried()
+            );
+
+            return other;
+        }
+
         @Override
         public @NotNull ItemStack quickMoveStack(@NotNull Player player, int slotIndex) {
             ItemStack resultStack = ItemStack.EMPTY;
@@ -135,6 +155,9 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
         public void setCarried(@NotNull ItemStack itemStack) {
             this.player.inventoryMenu.setCarried(itemStack);
         }
+
+        @Override
+        public void removed(@NotNull Player player) {}
     }
     
     public interface MenuTabConstructor<T extends CreativeMenuTab<?, T>> {

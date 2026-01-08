@@ -2,6 +2,7 @@ package dev.chililisoup.creativecraftingmenus.reg;
 
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
 import dev.chililisoup.creativecraftingmenus.gui.*;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.impl.client.itemgroup.FabricCreativeGuiComponents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -81,5 +82,7 @@ public class CreativeMenuTabs {
         return menuTab;
     }
 
-    public static void init() {}
+    public static void init() {
+        ClientPlayConnectionEvents.DISCONNECT.register((a, b) -> MENU_TABS.forEach(CreativeMenuTab::dispose));
+    }
 }

@@ -12,6 +12,7 @@ import dev.chililisoup.creativecraftingmenus.reg.CreativeMenuTabs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeInventoryListener;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
@@ -57,11 +58,24 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     @Shadow protected abstract int getTabY(CreativeModeTab tab);
     @Shadow private static CreativeModeTab selectedTab;
     @Shadow private CreativeInventoryListener listener;
+    @Shadow private EditBox searchBox;
 
     @Unique
     private void resetHeight() {
         this.imageHeight = 136;
         this.topPos = (this.height - this.imageHeight) / 2;
+        if (this.searchBox != null) this.searchBox.setY(this.topPos + 6);
+    }
+
+    @Inject(
+            method = "init", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/item/CreativeModeTabs;getDefaultTab()Lnet/minecraft/world/item/CreativeModeTab;",
+            ordinal = 0
+    ))
+    private void menuTabInit(CallbackInfo ci) {
+        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab)
+            menuTab.init(this, this.minecraft.player);
     }
 
     @Inject(
@@ -69,18 +83,16 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             value = "INVOKE",
             target = "Lnet/minecraft/world/inventory/InventoryMenu;removeSlotListener(Lnet/minecraft/world/inventory/ContainerListener;)V"
     ))
-    private void updateMenuTabScreen(CallbackInfo ci) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab) {
-            menuTab.init(this, this.minecraft.player);
+    private void menuTabSubInit(CallbackInfo ci) {
+        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab)
             menuTab.subInit();
-        }
     }
 
     @Inject(method = "selectTab", at = @At("HEAD"))
     private void updateMenuTabs(CreativeModeTab tab, CallbackInfo ci) {
         if (selectedTab == tab) return;
         if (selectedTab instanceof CreativeMenuTab<?, ?> oldTab)
-            oldTab.dispose();
+            oldTab.remove();
         if (this.listener != null && tab instanceof CreativeMenuTab<?, ?> newTab)
             newTab.init(this, this.minecraft.player);
     }

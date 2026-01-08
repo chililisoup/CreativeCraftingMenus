@@ -45,6 +45,11 @@ public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTab
         }
 
         @Override
+        CraftingTabMenu copyWithPlayer(@NotNull Player player) {
+            return this.copyContentsTo(new CraftingTabMenu(this.menuTab, player));
+        }
+
+        @Override
         public @NotNull ItemStack quickMoveFromInventory(@NotNull Player player, int slotIndex) {
             ItemStack resultStack = ItemStack.EMPTY;
             Slot slot = this.player.inventoryMenu.slots.get(slotIndex);
@@ -93,6 +98,12 @@ public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTab
             ClientRecipesProvider.tryProcess((recipeManager, provider) ->
                     slotChangedCraftingGrid(this.player, this.craftSlots, this.resultSlots, recipeManager, provider)
             );
+        }
+
+        @Override
+        public void removed(@NotNull Player player) {
+            if (player.hasInfiniteMaterials()) for (int i = 0; i < this.craftSlots.getContainerSize(); i++)
+                player.getInventory().placeItemBackInInventory(this.craftSlots.removeItemNoUpdate(i));
         }
     }
 }

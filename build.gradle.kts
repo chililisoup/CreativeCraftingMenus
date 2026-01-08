@@ -24,15 +24,6 @@ class ModData {
 val mod = ModData()
 val minecraft = property("deps.minecraft") as String
 
-// Stonecutter constants for mod loaders.
-// See https://stonecutter.kikugie.dev/stonecutter/guide/comments#condition-constants
-var loader: String = name.split("-")[1]
-stonecutter {
-    constants {
-        match(loader, "fabric", "neoforge")
-    }
-}
-
 modstitch {
     minecraftVersion = minecraft
     javaVersion = when {
@@ -47,7 +38,7 @@ modstitch {
     metadata {
         modId = mod.id
         modName = mod.name
-        modVersion = "${mod.version}+$minecraft-$loader"
+        modVersion = "${mod.version}+$minecraft"
         modGroup = mod.group
         modAuthor = mod.authors
         modLicense = mod.license
@@ -82,22 +73,8 @@ modstitch {
                     client()
                     name = "Test Client"
                     vmArgs("-Dmixin.debug.export=true")
-                    runDir = "../../run/fabric"
+                    runDir = "../../run"
                     ideConfigGenerated(true)
-                }
-            }
-        }
-    }
-
-    // ModDevGradle (NeoForge, Forge, Forgelike)
-    moddevgradle {
-        prop("deps.neoforge") { neoForgeVersion = it }
-
-        configureNeoForge {
-            runs {
-                register("testClient") {
-                    client()
-                    gameDirectory = layout.projectDirectory.dir("../../run/neoforge")
                 }
             }
         }
@@ -143,16 +120,6 @@ modstitch.onEnable {
 
 tasks.named("generateModMetadata") {
     dependsOn("stonecutterGenerate")
-}
-
-tasks.named("jar") {
-    dependsOn("filterArtifacts")
-}
-tasks.register<Delete>("filterArtifacts") {
-    if (modstitch.isLoom)
-        delete(layout.buildDirectory.dir("resources/main/META-INF"))
-    else
-        delete(layout.buildDirectory.file("resources/main/META-INF/neoforge.mods.toml"))
 }
 
 tasks.register<Delete>("buildCollectAndClean") {
