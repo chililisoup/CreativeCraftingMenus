@@ -20,22 +20,30 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ProvidesTrimMaterial;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.equipment.trim.ArmorTrim;
+import net.minecraft.world.item.equipment.trim.TrimMaterial;
 import net.minecraft.world.item.equipment.trim.TrimPattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static net.minecraft.client.gui.screens.inventory.SmithingScreen.ARMOR_STAND_ANGLE;
@@ -44,12 +52,18 @@ import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.*;
 
 public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTabMenu, SmithingMenuTab> {
     private static final Identifier SELECTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_selected");
+    private static final Identifier HIGHLIGHTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_highlighted");
     private static final Identifier UNSELECTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_unselected");
     private static final Identifier PLACEHOLDER_TRIM = CreativeCraftingMenus.id("container/placeholder_trim_smithing_template");
 
     private final ArmorStandRenderState armorStandPreview = new ArmorStandRenderState();
-    private final ArrayList<Pair<Holder.Reference<@NotNull TrimPattern>, ItemStack>> trimTemplates = new ArrayList<>();
+    private final ArrayList<Pair<Holder.@Nullable Reference<@NotNull TrimPattern>, ItemStack>> trimPatterns = new ArrayList<>();
+    private final ArrayList<Pair<Holder.@Nullable Reference<@NotNull TrimMaterial>, ItemStack>> trimMaterials = new ArrayList<>();
+    private List<Page.PageItem> pageContents = List.of();
     private Page selectedPage = Page.TRIM_PATTERN;
+    private float scrollOffs;
+    private boolean scrolling;
+    private int startIndex;
 
     public SmithingMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
         super(SmithingTabMenu::new, displayName, iconGenerator);
@@ -63,9 +77,11 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
 
     @Override
     public void subInit() {
-        if (trimTemplates.isEmpty()) {
-            trimTemplates.add(Pair.of(null, Items.BARRIER.getDefaultInstance()));
-            trimTemplates.addAll(ServerResourceProvider.getRegistryElements(Registries.TRIM_PATTERN).stream().map(
+        this.scrolling = false;
+
+        if (trimPatterns.isEmpty()) {
+            trimPatterns.add(Pair.of(null, Items.BARRIER.getDefaultInstance()));
+            trimPatterns.addAll(ServerResourceProvider.getRegistryElements(Registries.TRIM_PATTERN).stream().map(
                     patternRef -> Pair.of(
                             patternRef,
                             BuiltInRegistries.ITEM.get(
@@ -75,28 +91,44 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
             ).toList());
         }
 
-//        CreativeCraftingMenus.LOGGER.info(ServerResourceProvider.getFromComponent(DataComponents.PROVIDES_TRIM_MATERIAL));
+        if (trimMaterials.isEmpty()) {
+            trimMaterials.add(Pair.of(null, Items.BARRIER.getDefaultInstance()));
+
+            List<Item> materialItems = ServerResourceProvider.getFromComponent(DataComponents.PROVIDES_TRIM_MATERIAL);
+
+            trimMaterials.addAll(ServerResourceProvider.getRegistryElements(Registries.TRIM_MATERIAL).stream().map(
+                    patternRef -> {
+                        ItemStack iconStack = ItemStack.EMPTY;
+                        for (Item item : materialItems) {
+                            ProvidesTrimMaterial materialProvider = item.components().get(DataComponents.PROVIDES_TRIM_MATERIAL);
+                            if (materialProvider == null) continue;
+                            Optional<ResourceKey<@NotNull TrimMaterial>> key = materialProvider.material().key();
+                            if (key.isPresent() && patternRef.is(key.get())) {
+                                iconStack = item.getDefaultInstance();
+                                break;
+                            }
+                        }
+
+                        return Pair.of(patternRef, iconStack);
+                    }
+            ).toList());
+        }
+
+        if (this.pageContents.isEmpty()) this.pageContents = this.selectedPage.contentsSupplier.apply(this);
     }
 
     @Override
     public void render(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        guiGraphics.blitSprite(
-                RenderPipelines.GUI_TEXTURED,
-                SCROLLER_SPRITE,
-                screen.leftPos + 118,
-                screen.topPos + 16,
-                12,
-                15
-        );
+        this.renderScrollBar(screen, guiGraphics, mouseX, mouseY);
 
         guiGraphics.submitEntityRenderState(
                 this.armorStandPreview,
-                25.0F,
+                30.0F,
                 ARMOR_STAND_TRANSLATION, ARMOR_STAND_ANGLE,
                 null,
-                screen.leftPos + screen.imageWidth - 55,
-                screen.topPos + 20,
-                screen.leftPos + screen.imageWidth - 15,
+                screen.leftPos + screen.imageWidth - 60,
+                screen.topPos + 10,
+                screen.leftPos + screen.imageWidth - 8,
                 screen.topPos + 80
         );
 
@@ -106,58 +138,137 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
             int y = screen.topPos + 15 + i * 19;
             boolean selected = page == this.selectedPage;
 
+            boolean hovered = mouseX >= x && mouseY >= y && mouseX < x + 16 && mouseY < y + 18;
+            if (hovered) {
+                if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
+                guiGraphics.setTooltipForNextFrame(page.tooltip, mouseX, mouseY);
+            }
+
             guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    selected ? SELECTED_TAB : UNSELECTED_TAB,
+                    selected ? SELECTED_TAB : (hovered ? HIGHLIGHTED_TAB : UNSELECTED_TAB),
                     x,
                     y,
                     16,
                     18
             );
             guiGraphics.renderItem(page.icon, x, y + 1);
-            if (mouseX > x && mouseY > y && mouseX < x + 16 && mouseY < y + 18) {
-                if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                guiGraphics.setTooltipForNextFrame(page.tooltip, mouseX, mouseY);
-            }
         }
 
-        this.selectedPage.renderFunction.render(this, screen, guiGraphics);
+        this.renderPageContents(screen, guiGraphics, mouseX, mouseY);
     }
 
-    private static void renderTrimPatternPage(SmithingMenuTab instance, AbstractContainerScreen<?> screen, GuiGraphics guiGraphics) {
-        if (instance.menu == null) return;
-        ItemStack menuStack = instance.menu.getSlot(1).getItem();
-        var trim = menuStack.get(DataComponents.TRIM);
+    private void renderScrollBar(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        int x = screen.leftPos + 118;
+        int y = screen.topPos + 16 + (int) (39.0F * this.scrollOffs);
 
-        for (int i = 0; i < instance.trimTemplates.size() && i < 12; i++) {
-            int x = screen.leftPos + 51 + (i % 4) * 16;
-            int y = screen.topPos + 16 + (i / 4) * 18;
+        guiGraphics.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                this.isScrollBarActive() ? SCROLLER_SPRITE : SCROLLER_DISABLED_SPRITE,
+                x,
+                y,
+                12,
+                15
+        );
 
-            boolean selected = trim == null ?
-                    (i == 0) :
-                    trim.pattern() == instance.trimTemplates.get(i).getFirst();
+        if (mouseX >= x && mouseX < x + 12 && mouseY >= y && mouseY < y + 15)
+            guiGraphics.requestCursor(this.scrolling ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+    }
+
+    private void renderPageContents(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (this.menu == null) return;
+
+        for (int i = this.startIndex; i < this.pageContents.size() && i < 12 + this.startIndex; i++) {
+            int x = screen.leftPos + 51 + ((i - this.startIndex) % 4) * 16;
+            int y = screen.topPos + 16 + ((i - this.startIndex) / 4) * 18;
+
+            Page.PageItem item = this.pageContents.get(i);
+
+            boolean hovered = mouseX >= x && mouseY >= y && mouseX < x + 16 && mouseY < y + 18;
+            if (hovered) {
+                if (!item.selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
+                guiGraphics.setTooltipForNextFrame(item.tooltip, mouseX, mouseY);
+            }
 
             guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    selected ? RECIPE_SELECTED_SPRITE : RECIPE_SPRITE,
+                    item.selected ? RECIPE_SELECTED_SPRITE : (hovered ? RECIPE_HIGHLIGHTED_SPRITE : RECIPE_SPRITE),
                     x,
                     y,
                     16,
                     18
             );
-            ItemStack itemStack = instance.trimTemplates.get(i).getSecond();
-            if (itemStack.isEmpty())
-                guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, PLACEHOLDER_TRIM, x, y + 1, 16, 16);
-            else guiGraphics.renderItem(itemStack, x, y + 1);
+
+            item.iconRenderer.render(guiGraphics, x, y + 1);
         }
     }
 
-    private static void renderTrimMaterialPage(SmithingMenuTab instance, AbstractContainerScreen<?> screen, GuiGraphics guiGraphics) {
+    private static List<Page.PageItem> getTrimPatternPageContents(SmithingMenuTab instance) {
+        if (instance.menu == null) return List.of();
+        var trim = instance.menu.getSlot(1).getItem().get(DataComponents.TRIM);
 
+        return instance.trimPatterns.stream().map(template -> {
+            @Nullable Holder<@NotNull TrimPattern> pattern = template.getFirst();
+            return new Page.PageItem(
+                    pattern == null ?
+                            Component.translatable("gui.none") :
+                            pattern.value().description(),
+                    (guiGraphics, x, y) -> {
+                        ItemStack itemStack = template.getSecond();
+                        if (itemStack.isEmpty())
+                            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, PLACEHOLDER_TRIM, x, y, 16, 16);
+                        else guiGraphics.renderItem(itemStack, x, y);
+                    },
+                    trim == null ?
+                            pattern == null :
+                            trim.pattern() == template.getFirst()
+            );
+        }).toList();
     }
 
-    private static void renderItemMaterialPage(SmithingMenuTab instance, AbstractContainerScreen<?> screen, GuiGraphics guiGraphics) {
+    private static List<Page.PageItem> getTrimMaterialPageContents(SmithingMenuTab instance) {
+        if (instance.menu == null) return List.of();
+        var trim = instance.menu.getSlot(1).getItem().get(DataComponents.TRIM);
 
+        return instance.trimMaterials.stream().map(template -> {
+            @Nullable Holder<@NotNull TrimMaterial> material = template.getFirst();
+            return new Page.PageItem(
+                    material == null ?
+                            Component.translatable("gui.none") :
+                            material.value().description(),
+                    (guiGraphics, x, y) -> {
+                        ItemStack itemStack = template.getSecond();
+                        if (itemStack.isEmpty())
+                            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, PLACEHOLDER_TRIM, x, y, 16, 16);
+                        else guiGraphics.renderItem(itemStack, x, y);
+                    },
+                    trim == null ?
+                            material == null :
+                            material != null && trim.material().value() == material.value()
+            );
+        }).toList();
+    }
+
+    private static List<Page.PageItem> getItemMaterialPageContents(SmithingMenuTab instance) {
+        return List.of();
+    }
+
+    private static List<Runnable> getTrimPatternPageClickActions(SmithingMenuTab instance) {
+        if (instance.menu == null) return List.of();
+        return instance.trimPatterns.stream().map(template ->
+                (Runnable) () -> instance.menu.setTrimPattern(template.getFirst())
+        ).toList();
+    }
+
+    private static List<Runnable> getTrimMaterialPageClickActions(SmithingMenuTab instance) {
+        if (instance.menu == null) return List.of();
+        return instance.trimMaterials.stream().map(template ->
+                (Runnable) () -> instance.menu.setTrimMaterial(template.getFirst())
+        ).toList();
+    }
+
+    private static List<Runnable> getItemMaterialPageClickActions(SmithingMenuTab instance) {
+        return List.of();
     }
 
     private @Nullable Page checkPageClicked(double mouseX, double mouseY) {
@@ -169,36 +280,118 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
             int x = this.screen.leftPos + 33;
             int y = this.screen.topPos + 15 + i * 19;
 
-            if (mouseX > x && mouseY > y && mouseX < x + 16 && mouseY < y + 18)
+            if (mouseX >= x && mouseY >= y && mouseX < x + 16 && mouseY < y + 18)
                 return page;
         }
 
         return null;
     }
 
+    private @Nullable Runnable checkPageContentsClicked(double mouseX, double mouseY) {
+        if (this.screen == null) return null;
+
+        List<Runnable> contents = this.selectedPage.clickActionSupplier.apply(this);
+        for (int i = this.startIndex; i < contents.size() && i < 12 + this.startIndex; i++) {
+            int x = this.screen.leftPos + 51 + ((i - this.startIndex) % 4) * 16;
+            int y = this.screen.topPos + 16 + ((i - this.startIndex) / 4) * 18;
+
+            if (mouseX >= x && mouseY >= y && mouseX < x + 16 && mouseY < y + 18)
+                return contents.get(i);
+        }
+
+        return null;
+    }
+
     public boolean mouseClicked(MouseButtonEvent mouseButtonEvent) {
-        return checkPageClicked(mouseButtonEvent.x(), mouseButtonEvent.y()) != null;
+        if (this.screen == null) return false;
+
+        int x = this.screen.leftPos + 118;
+        int y = this.screen.topPos + 16;
+        if (mouseButtonEvent.x() >= x && mouseButtonEvent.x() < x + 12 && mouseButtonEvent.y() >= y && mouseButtonEvent.y() < y + 54)
+            this.scrolling = true;
+
+        if (checkPageClicked(mouseButtonEvent.x(), mouseButtonEvent.y()) != null) return true;
+        return checkPageContentsClicked(mouseButtonEvent.x(), mouseButtonEvent.y()) != null;
     }
 
     public boolean mouseReleased(MouseButtonEvent mouseButtonEvent) {
+        this.scrolling = false;
+
         Page page = checkPageClicked(mouseButtonEvent.x(), mouseButtonEvent.y());
-        if (page != null) this.selectedPage = page;
-        return page != null;
+        if (page != null) {
+            this.selectedPage = page;
+            this.pageContents = this.selectedPage.contentsSupplier.apply(this);
+            this.scrollOffs = 0.0F;
+            this.startIndex = 0;
+            return true;
+        }
+
+        Runnable onClick = checkPageContentsClicked(mouseButtonEvent.x(), mouseButtonEvent.y());
+        if (onClick != null) {
+            onClick.run();
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isScrollBarActive() {
+        return this.pageContents.size() > 12;
+    }
+
+    private int getOffscreenRows() {
+        return (this.pageContents.size() + 4 - 1) / 4 - 3;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent mouseButtonEvent) {
+        if (this.screen == null || !this.scrolling || !this.isScrollBarActive())
+            return false;
+
+        int top = this.screen.topPos + 16;
+        int bottom = top + 54;
+        this.scrollOffs = ((float) mouseButtonEvent.y() - top - 7.5F) / (bottom - top - 15.0F);
+        this.scrollOffs = Mth.clamp(this.scrollOffs, 0.0F, 1.0F);
+        this.startIndex = (int) (this.scrollOffs * this.getOffscreenRows() + 0.5) * 4;
+        return true;
+    }
+
+    @Override
+    public boolean mouseScrolled(double distance) {
+        if (this.isScrollBarActive()) {
+            int offscreenRows = this.getOffscreenRows();
+            float deltaY = (float) distance / offscreenRows;
+            this.scrollOffs = Mth.clamp(this.scrollOffs - deltaY, 0.0F, 1.0F);
+            this.startIndex = (int)(this.scrollOffs * offscreenRows + 0.5) * 4;
+        }
+
+        return true;
     }
 
     @Override
     public void remove() {
-        this.updateArmorStandPreview(ItemStack.EMPTY);
+        this.updateItem(ItemStack.EMPTY);
+        this.selectedPage = Page.TRIM_PATTERN;
+        this.pageContents = List.of();
+        this.scrollOffs = 0.0F;
+        this.startIndex = 0;
         super.remove();
     }
 
     @Override
     public void dispose() {
-        this.trimTemplates.clear();
+        this.trimPatterns.clear();
+        this.trimMaterials.clear();
+        this.selectedPage = Page.TRIM_PATTERN;
+        this.pageContents = List.of();
+        this.scrollOffs = 0.0F;
+        this.startIndex = 0;
         super.dispose();
     }
 
-    private void updateArmorStandPreview(ItemStack itemStack) {
+    private void updateItem(ItemStack itemStack) {
+        this.pageContents = this.selectedPage.contentsSupplier.apply(this);
+
         this.armorStandPreview.leftHandItemStack = ItemStack.EMPTY;
         this.armorStandPreview.leftHandItemState.clear();
         this.armorStandPreview.headEquipment = ItemStack.EMPTY;
@@ -251,32 +444,44 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         TRIM_PATTERN (
                 Component.translatable("container.creative_crafting_menus.smithing.trim_pattern"),
                 Items.SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE.getDefaultInstance(),
-                SmithingMenuTab::renderTrimPatternPage
+                SmithingMenuTab::getTrimPatternPageContents,
+                SmithingMenuTab::getTrimPatternPageClickActions
         ),
         TRIM_MATERIAL (
                 Component.translatable("container.creative_crafting_menus.smithing.trim_material"),
                 Items.AMETHYST_SHARD.getDefaultInstance(),
-                SmithingMenuTab::renderTrimMaterialPage
+                SmithingMenuTab::getTrimMaterialPageContents,
+                SmithingMenuTab::getTrimMaterialPageClickActions
         ),
         ITEM_MATERIAL (
                 Component.translatable("container.creative_crafting_menus.smithing.item_material"),
                 Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE.getDefaultInstance(),
-                SmithingMenuTab::renderItemMaterialPage
+                SmithingMenuTab::getItemMaterialPageContents,
+                SmithingMenuTab::getItemMaterialPageClickActions
         );
 
         private final Component tooltip;
         private final ItemStack icon;
-        private final RenderFunction renderFunction;
+        private final Function<SmithingMenuTab, List<PageItem>> contentsSupplier;
+        private final Function<SmithingMenuTab, List<Runnable>> clickActionSupplier;
 
-        Page(final Component tooltip, final ItemStack icon, final RenderFunction renderFunction) {
+        Page(
+                final Component tooltip,
+                final ItemStack icon,
+                final Function<SmithingMenuTab, List<PageItem>> contentsSupplier,
+                final Function<SmithingMenuTab, List<Runnable>> clickActionSupplier
+        ) {
             this.tooltip = tooltip;
             this.icon = icon;
-            this.renderFunction = renderFunction;
+            this.clickActionSupplier = clickActionSupplier;
+            this.contentsSupplier = contentsSupplier;
         }
 
         private interface RenderFunction {
-            void render(SmithingMenuTab instance, AbstractContainerScreen<?> screen, GuiGraphics guiGraphics);
+            void render(GuiGraphics guiGraphics, int x, int y);
         }
+
+        private record PageItem(Component tooltip, RenderFunction iconRenderer, boolean selected) {}
     }
 
     public static class SmithingTabMenu extends CreativeTabMenu<SmithingMenuTab> {
@@ -316,29 +521,62 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
             return resultStack;
         }
 
-        private ItemStack updateResult(ItemStack inputStack) {
-            ItemStack result = inputStack.copy();
-            result.applyComponents(DataComponentMap.builder().set(
-                    DataComponents.TRIM,
-                    new ArmorTrim(
-                            ServerResourceProvider.getRegistryElements(Registries.TRIM_MATERIAL).getLast(),
-                            this.menuTab.trimTemplates.get(6).getFirst()
-                    )
-            ).build());
+        private @Nullable ArmorTrim getArmorTrim() {
+            return Optional.ofNullable(this.resultSlots.getItem(0).get(DataComponents.TRIM))
+                    .orElse(this.inputSlots.getItem(0).get(DataComponents.TRIM));
+        }
 
-            this.resultSlots.setItem(0, result);
-            return result;
+        private void setTrimPattern(@Nullable Holder<@NotNull TrimPattern> pattern) {
+            ItemStack result = this.resultSlots.getItem(0);
+            if (result.isEmpty()) return;
+
+            if (pattern == null) result.remove(DataComponents.TRIM);
+            else {
+                ArmorTrim armorTrim = this.getArmorTrim();
+
+                Holder<@NotNull TrimMaterial> material = armorTrim == null ?
+                        ServerResourceProvider.getRegistryElements(Registries.TRIM_MATERIAL).getFirst() :
+                        armorTrim.material();
+
+                result.applyComponents(DataComponentMap.builder().set(
+                        DataComponents.TRIM,
+                        new ArmorTrim(material, pattern)
+                ).build());
+            }
+
+            this.menuTab.updateItem(result);
+        }
+
+        private void setTrimMaterial(@Nullable Holder<@NotNull TrimMaterial> material) {
+            ItemStack result = this.resultSlots.getItem(0);
+            if (result.isEmpty()) return;
+
+            if (material == null) result.remove(DataComponents.TRIM);
+            else {
+                ArmorTrim armorTrim = this.getArmorTrim();
+
+                Holder<@NotNull TrimPattern> pattern = armorTrim == null ?
+                        ServerResourceProvider.getRegistryElements(Registries.TRIM_PATTERN).getFirst() :
+                        armorTrim.pattern();
+
+                result.applyComponents(DataComponentMap.builder().set(
+                        DataComponents.TRIM,
+                        new ArmorTrim(material, pattern)
+                ).build());
+            }
+
+            this.menuTab.updateItem(result);
         }
 
         @Override
         public void slotsChanged(@NotNull Container container) {
             if (container == this.inputSlots) {
-                this.menuTab.updateArmorStandPreview(
-                        this.updateResult(this.inputSlots.getItem(0))
-                );
+                ItemStack result = this.inputSlots.getItem(0).copy();
+                this.resultSlots.setItem(0, result);
+                this.menuTab.updateItem(result);
             } else if (container == this.resultSlots) {
                 this.inputSlots.clearContent();
-                this.menuTab.updateArmorStandPreview(ItemStack.EMPTY);
+                this.menuTab.updateItem(ItemStack.EMPTY);
             }
         }
 

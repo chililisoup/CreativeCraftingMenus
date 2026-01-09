@@ -207,27 +207,6 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
         } else cir.setReturnValue(false);
     }
 
-    @Inject(
-            method = "mouseReleased", at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/world/item/CreativeModeTabs;tabs()Ljava/util/List;"),
-            cancellable = true
-    )
-    private void checkMenuTabReleased(
-            MouseButtonEvent mouseButtonEvent,
-            CallbackInfoReturnable<Boolean> cir,
-            @Local(ordinal = 0) double x,
-            @Local(ordinal = 1) double y
-    ) {
-        for (CreativeMenuTab<?, ?> menuTab : CreativeMenuTabs.MENU_TABS) {
-            if (this.checkTabClicked(menuTab, x, y)) {
-                this.selectTab(menuTab);
-                cir.setReturnValue(true);
-                return;
-            }
-        }
-    }
-
     @WrapOperation(
             method = "slotClicked", at = @At(
             value = "INVOKE",
@@ -300,9 +279,43 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             target = "Lnet/minecraft/world/item/CreativeModeTabs;tabs()Ljava/util/List;"),
             cancellable = true
     )
-    private static void menuTabMouseReleased(MouseButtonEvent mouseButtonEvent, CallbackInfoReturnable<Boolean> cir) {
+    private void menuTabMouseReleased(
+            MouseButtonEvent mouseButtonEvent,
+            CallbackInfoReturnable<Boolean> cir,
+            @Local(ordinal = 0) double x,
+            @Local(ordinal = 1) double y
+    ) {
         if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab && menuTab.mouseReleased(mouseButtonEvent))
             cir.setReturnValue(true);
+
+        for (CreativeMenuTab<?, ?> menuTab : CreativeMenuTabs.MENU_TABS) {
+            if (this.checkTabClicked(menuTab, x, y)) {
+                this.selectTab(menuTab);
+                cir.setReturnValue(true);
+                return;
+            }
+        }
+    }
+
+    @Inject(
+            method = "mouseDragged", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;mouseDragged(Lnet/minecraft/client/input/MouseButtonEvent;DD)Z"),
+            cancellable = true
+    )
+    private void menuTabDragged(MouseButtonEvent mouseButtonEvent, double a, double b, CallbackInfoReturnable<Boolean> cir) {
+        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab && menuTab.mouseDragged(mouseButtonEvent))
+            cir.setReturnValue(true);
+    }
+
+    @WrapOperation(
+            method = "mouseScrolled", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;mouseScrolled(DDDD)Z")
+    )
+    private boolean menuTabScrolled(CreativeModeInventoryScreen instance, double a, double b, double c, double distance, Operation<Boolean> original) {
+        if (original.call(instance, a, b, c, distance)) return true;
+        return !(selectedTab instanceof CreativeMenuTab<?, ?> menuTab) || !menuTab.mouseScrolled(distance);
     }
 
     @WrapOperation(

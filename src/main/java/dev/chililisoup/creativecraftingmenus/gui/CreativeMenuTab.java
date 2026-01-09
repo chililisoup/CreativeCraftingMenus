@@ -65,6 +65,14 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
         return false;
     }
 
+    public boolean mouseDragged(MouseButtonEvent mouseButtonEvent) {
+        return false;
+    }
+
+    public boolean mouseScrolled(double distance) {
+        return false;
+    }
+
     @Override
     public boolean shouldDisplay() {
         return !hidden && super.shouldDisplay();
