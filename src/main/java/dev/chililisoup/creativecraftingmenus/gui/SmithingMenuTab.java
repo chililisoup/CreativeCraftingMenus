@@ -5,6 +5,7 @@ import com.mojang.datafixers.util.Pair;
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
 import dev.chililisoup.creativecraftingmenus.util.ServerResourceProvider;
 import dev.chililisoup.creativecraftingmenus.util.MenuHelper;
+import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -21,6 +22,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EntityType;
@@ -40,9 +43,7 @@ import net.minecraft.world.item.equipment.trim.TrimPattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -55,6 +56,24 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     private static final Identifier HIGHLIGHTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_highlighted");
     private static final Identifier UNSELECTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_unselected");
     private static final Identifier PLACEHOLDER_TRIM = CreativeCraftingMenus.id("container/placeholder_trim_smithing_template");
+    private static final Set<TagKey<@NotNull Item>> MATERIAL_SWAP_TAGS = Set.of(
+            ItemTags.SWORDS,
+            ItemTags.PICKAXES,
+            ItemTags.AXES,
+            ItemTags.SHOVELS,
+            ItemTags.HOES,
+            ItemTags.SPEARS,
+            ItemTags.HEAD_ARMOR,
+            ItemTags.CHEST_ARMOR,
+            ItemTags.LEG_ARMOR,
+            ItemTags.FOOT_ARMOR,
+            ConventionalItemTags.HORSE_ARMORS,
+            ConventionalItemTags.NAUTILUS_ARMORS,
+            ItemTags.SIGNS,
+            ItemTags.HANGING_SIGNS,
+            ItemTags.BANNERS,
+            ConventionalItemTags.POTIONS
+    );
 
     private final ArmorStandRenderState armorStandPreview = new ArmorStandRenderState();
     private final ArrayList<Pair<Holder.@Nullable Reference<@NotNull TrimPattern>, ItemStack>> trimPatterns = new ArrayList<>();
@@ -205,7 +224,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
 
     private static List<Page.PageItem> getTrimPatternPageContents(SmithingMenuTab instance) {
         if (instance.menu == null) return List.of();
-        var trim = instance.menu.getSlot(1).getItem().get(DataComponents.TRIM);
+        ArmorTrim trim = instance.menu.getSlot(1).getItem().get(DataComponents.TRIM);
 
         return instance.trimPatterns.stream().map(template -> {
             @Nullable Holder<@NotNull TrimPattern> pattern = template.getFirst();
@@ -228,7 +247,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
 
     private static List<Page.PageItem> getTrimMaterialPageContents(SmithingMenuTab instance) {
         if (instance.menu == null) return List.of();
-        var trim = instance.menu.getSlot(1).getItem().get(DataComponents.TRIM);
+        ArmorTrim trim = instance.menu.getSlot(1).getItem().get(DataComponents.TRIM);
 
         return instance.trimMaterials.stream().map(template -> {
             @Nullable Holder<@NotNull TrimMaterial> material = template.getFirst();
@@ -250,6 +269,33 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     }
 
     private static List<Page.PageItem> getItemMaterialPageContents(SmithingMenuTab instance) {
+        if (instance.menu == null) return List.of();
+
+        ItemStack itemStack = instance.menu.getSlot(1).getItem();
+        List<TagKey<@NotNull Item>> tags = itemStack.getTags().toList();
+        if (itemStack.is(Items.TIPPED_ARROW)) {
+            tags = new ArrayList<>(tags);
+            tags.add(ConventionalItemTags.POTIONS);
+        }
+
+        for (TagKey<@NotNull Item> tag : MATERIAL_SWAP_TAGS) {
+            if (tags.contains(tag)) {
+                List<Item> list = ServerResourceProvider.getFromTag(tag);
+                if (tag.equals(ConventionalItemTags.POTIONS)) {
+                    list = new ArrayList<>(list);
+                    list.add(Items.TIPPED_ARROW);
+                }
+
+                return list.stream().map(
+                        tagItem -> new Page.PageItem(
+                                tagItem.getName(),
+                                (guiGraphics, x, y) -> guiGraphics.renderItem(tagItem.getDefaultInstance(), x, y),
+                                itemStack.is(tagItem)
+                        )
+                ).toList();
+            }
+        }
+
         return List.of();
     }
 
@@ -268,6 +314,29 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     }
 
     private static List<Runnable> getItemMaterialPageClickActions(SmithingMenuTab instance) {
+        if (instance.menu == null) return List.of();
+
+        ItemStack itemStack = instance.menu.getSlot(1).getItem();
+        List<TagKey<@NotNull Item>> tags = itemStack.getTags().toList();
+        if (itemStack.is(Items.TIPPED_ARROW)) {
+            tags = new ArrayList<>(tags);
+            tags.add(ConventionalItemTags.POTIONS);
+        }
+
+        for (TagKey<@NotNull Item> tag : MATERIAL_SWAP_TAGS) {
+            if (tags.contains(tag)) {
+                List<Item> list = ServerResourceProvider.getFromTag(tag);
+                if (tag.equals(ConventionalItemTags.POTIONS)) {
+                    list = new ArrayList<>(list);
+                    list.add(Items.TIPPED_ARROW);
+                }
+
+                return list.stream().map(
+                        tagItem -> (Runnable) () -> instance.menu.swapBaseItem(tagItem)
+                ).toList();
+            }
+        }
+
         return List.of();
     }
 
@@ -402,10 +471,10 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         if (itemStack.isEmpty()) return;
 
         Equippable equippable = itemStack.get(DataComponents.EQUIPPABLE);
-        EquipmentSlot equipmentSlot = equippable != null ? equippable.slot() : null;
+        EquipmentSlot equipmentSlot = equippable != null ? equippable.slot() : EquipmentSlot.OFFHAND;
         ItemModelResolver itemModelResolver = Minecraft.getInstance().getItemModelResolver();
         switch (equipmentSlot) {
-            case HEAD:
+            case HEAD -> {
                 if (HumanoidArmorLayer.shouldRender(itemStack, EquipmentSlot.HEAD))
                     this.armorStandPreview.headEquipment = itemStack.copy();
                 else itemModelResolver.updateForTopItem(
@@ -416,18 +485,11 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                         null,
                         0
                 );
-                break;
-            case CHEST:
-                this.armorStandPreview.chestEquipment = itemStack.copy();
-                break;
-            case LEGS:
-                this.armorStandPreview.legsEquipment = itemStack.copy();
-                break;
-            case FEET:
-                this.armorStandPreview.feetEquipment = itemStack.copy();
-                break;
-            case null:
-            default:
+            }
+            case CHEST -> this.armorStandPreview.chestEquipment = itemStack.copy();
+            case LEGS -> this.armorStandPreview.legsEquipment = itemStack.copy();
+            case FEET -> this.armorStandPreview.feetEquipment = itemStack.copy();
+            default -> {
                 this.armorStandPreview.leftHandItemStack = itemStack.copy();
                 itemModelResolver.updateForTopItem(
                         this.armorStandPreview.leftHandItemState,
@@ -437,6 +499,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                         null,
                         0
                 );
+            }
         }
     }
 
@@ -566,6 +629,17 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
             }
 
             this.menuTab.updateItem(result);
+        }
+
+        private void swapBaseItem(Item base) {
+            ItemStack result = this.resultSlots.getItem(0);
+            if (result.isEmpty()) return;
+
+            ItemStack swapped = base.getDefaultInstance();
+            swapped.applyComponents(result.getComponentsPatch());
+
+            this.resultSlots.setItem(0, swapped);
+            this.menuTab.updateItem(swapped);
         }
 
         @Override

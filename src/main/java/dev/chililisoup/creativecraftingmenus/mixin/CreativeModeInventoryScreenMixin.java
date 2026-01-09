@@ -315,7 +315,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     )
     private boolean menuTabScrolled(CreativeModeInventoryScreen instance, double a, double b, double c, double distance, Operation<Boolean> original) {
         if (original.call(instance, a, b, c, distance)) return true;
-        return !(selectedTab instanceof CreativeMenuTab<?, ?> menuTab) || !menuTab.mouseScrolled(distance);
+        return selectedTab instanceof CreativeMenuTab<?, ?> menuTab && menuTab.mouseScrolled(distance);
     }
 
     @WrapOperation(
