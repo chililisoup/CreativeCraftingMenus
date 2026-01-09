@@ -44,7 +44,7 @@ public class CreativeMenuTabs {
                         Items.LOOM::getDefaultInstance
                 ),
                 register(
-                        CraftingMenuTab::new,
+                        SmithingMenuTab::new,
                         "smithing_menu",
                         "container.upgrade",
                         Items.SMITHING_TABLE::getDefaultInstance

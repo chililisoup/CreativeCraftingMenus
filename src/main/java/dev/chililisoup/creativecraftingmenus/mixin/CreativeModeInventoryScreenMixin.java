@@ -176,7 +176,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             guiGraphics.drawString(font, this.playerInventoryTitle, 9, this.imageHeight - 94, color, bl);
         } else original.call(guiGraphics, font, title, x, y, color, bl);
     }
-    
+
     @Inject(method = "renderBg", at = @At("TAIL"))
     private void renderTabMenu(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY, CallbackInfo ci) {
         if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab)
@@ -281,6 +281,28 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     private void allowMenuTabTyping(CharacterEvent characterEvent, CallbackInfoReturnable<Boolean> cir) {
         if (selectedTab instanceof CreativeMenuTab<?, ?>)
             cir.setReturnValue(super.charTyped(characterEvent));
+    }
+
+    @Inject(
+            method = "mouseClicked", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/item/CreativeModeTabs;tabs()Ljava/util/List;"),
+            cancellable = true
+    )
+    private static void menuTabMouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl, CallbackInfoReturnable<Boolean> cir) {
+        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab && menuTab.mouseClicked(mouseButtonEvent))
+            cir.setReturnValue(true);
+    }
+
+    @Inject(
+            method = "mouseReleased", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/item/CreativeModeTabs;tabs()Ljava/util/List;"),
+            cancellable = true
+    )
+    private static void menuTabMouseReleased(MouseButtonEvent mouseButtonEvent, CallbackInfoReturnable<Boolean> cir) {
+        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab && menuTab.mouseReleased(mouseButtonEvent))
+            cir.setReturnValue(true);
     }
 
     @WrapOperation(

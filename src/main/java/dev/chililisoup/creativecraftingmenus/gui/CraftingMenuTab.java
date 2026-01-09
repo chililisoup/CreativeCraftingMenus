@@ -1,6 +1,6 @@
 package dev.chililisoup.creativecraftingmenus.gui;
 
-import dev.chililisoup.creativecraftingmenus.util.ClientRecipesProvider;
+import dev.chililisoup.creativecraftingmenus.util.ServerResourceProvider;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -95,7 +95,7 @@ public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTab
 
         @Override
         public void slotsChanged(@NotNull Container container) {
-            ClientRecipesProvider.tryProcess((recipeManager, provider) ->
+            ServerResourceProvider.tryProcessRecipes((recipeManager, provider) ->
                     slotChangedCraftingGrid(this.player, this.craftSlots, this.resultSlots, recipeManager, provider)
             );
         }

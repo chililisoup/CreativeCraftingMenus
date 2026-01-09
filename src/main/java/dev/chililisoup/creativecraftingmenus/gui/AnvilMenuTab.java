@@ -172,7 +172,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu, Anv
                 this.resultSlots.setItem(0, this.inputSlots.getItem(0).copy());
             else if (container == this.resultSlots) {
                 this.inputSlots.clearContent();
-                this.menuTab.firstSlotChanged(this.inputSlots.getItem(0));
+                this.menuTab.firstSlotChanged(ItemStack.EMPTY);
             }
         }
 

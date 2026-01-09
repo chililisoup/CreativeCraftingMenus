@@ -3,6 +3,7 @@ package dev.chililisoup.creativecraftingmenus.gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
@@ -53,6 +54,14 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
     }
 
     public boolean keyPressed(KeyEvent keyEvent) {
+        return false;
+    }
+
+    public boolean mouseClicked(MouseButtonEvent mouseButtonEvent) {
+        return false;
+    }
+
+    public boolean mouseReleased(MouseButtonEvent mouseButtonEvent) {
         return false;
     }
 
