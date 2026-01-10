@@ -18,8 +18,9 @@
       "dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus"
     ]
   },
+  "accessWidener" : "${mod_id}.classtweaker",
   "depends": {
-    "fabricloader": ">=0.15",
+    "fabricloader": ">=0.18",
     "minecraft": "${minecraft_range}"
   },
   "recommends": {

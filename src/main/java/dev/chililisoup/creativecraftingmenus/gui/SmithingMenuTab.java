@@ -92,6 +92,9 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         this.armorStandPreview.showArms = true;
         this.armorStandPreview.xRot = 25.0F;
         this.armorStandPreview.bodyRot = 210.0F;
+        this.armorStandPreview.elytraRotX = Mth.PI / 12.0F;
+        this.armorStandPreview.elytraRotY = 0.0F;
+        this.armorStandPreview.elytraRotZ = -this.armorStandPreview.elytraRotX;
     }
 
     @Override
@@ -468,6 +471,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         this.armorStandPreview.chestEquipment = ItemStack.EMPTY;
         this.armorStandPreview.legsEquipment = ItemStack.EMPTY;
         this.armorStandPreview.feetEquipment = ItemStack.EMPTY;
+        this.armorStandPreview.bodyRot = itemStack.has(DataComponents.GLIDER) ? 30.0F : 210.0F;
         if (itemStack.isEmpty()) return;
 
         Equippable equippable = itemStack.get(DataComponents.EQUIPPABLE);

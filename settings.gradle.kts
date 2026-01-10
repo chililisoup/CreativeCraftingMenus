@@ -2,23 +2,15 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
-
-        // Modstitch
-        maven("https://maven.isxander.dev/releases/")
-
-        // Loom platform
         maven("https://maven.fabricmc.net/")
-
-        // MDG platform
-        maven("https://maven.neoforged.net/releases/")
-
-        // Stonecutter
         maven("https://maven.kikugie.dev/releases")
         maven("https://maven.kikugie.dev/snapshots")
     }
 }
 
 plugins {
+    kotlin("jvm") version "2.3.0" apply false
+    id("com.google.devtools.ksp") version "2.3.4" apply false
     id("dev.kikugie.stonecutter") version "0.8.1"
 }
 
@@ -27,19 +19,9 @@ stonecutter {
     centralScript = "build.gradle.kts"
 
     create(rootProject) {
-        /**
-         * @param mcVersion The base minecraft version.
-         * @param loaders A list of loaders to target, supports "fabric" (1.14+), "neoforge"(1.20.6+), "vanilla"(any) or "forge"(<=1.20.1)
-         */
-        fun mc(mcVersion: String, name: String = mcVersion, loaders: Iterable<String>) =
-                loaders.forEach { version("$name-$it", mcVersion) }
+        versions("1.21.11")
 
-        // Configure your targets here!
-        mc("1.21.11", loaders = listOf("fabric"))
-
-        // This is the default target.
-        // https://stonecutter.kikugie.dev/stonecutter/guide/setup#settings-settings-gradle-kts
-        vcsVersion = "1.21.11-fabric"
+        vcsVersion = "1.21.11"
     }
 }
 

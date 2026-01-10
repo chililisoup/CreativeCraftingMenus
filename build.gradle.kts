@@ -1,6 +1,11 @@
 plugins {
+    id("java-library")
+    id("idea")
+    id("fabric-loom")
+    kotlin("jvm")
+    id("com.google.devtools.ksp")
     id("dev.kikugie.stonecutter")
-    id("dev.isxander.modstitch.base")
+    id("dev.kikugie.fletching-table.fabric")
 }
 
 fun prop(name: String, consumer: (prop: String) -> Unit) {
@@ -23,110 +28,118 @@ class ModData {
 
 val mod = ModData()
 val minecraft = property("deps.minecraft") as String
+val minecraftRange = property("deps.minecraft_range") as String
 
-modstitch {
-    minecraftVersion = minecraft
-    javaVersion = when {
-        sc.current.parsed >= "1.20.6" -> 21
-        sc.current.parsed >= "1.18" -> 17
-        sc.current.parsed >= "1.17" -> 16
-        else -> 8
+version = "${mod.version}+${sc.current.version}"
+base.archivesName = mod.id
+
+val requiredJava = when {
+    sc.current.parsed >= "1.20.6" -> JavaVersion.VERSION_21
+    sc.current.parsed >= "1.18" -> JavaVersion.VERSION_17
+    sc.current.parsed >= "1.17" -> JavaVersion.VERSION_16
+    else -> JavaVersion.VERSION_1_8
+}
+
+loom {
+    fabricModJsonPath = rootProject.file("src/main/resources/fabric.mod.json") // Useful for interface injection
+    accessWidenerPath = rootProject.file("src/main/resources/${mod.id}.classtweaker")
+
+    runConfigs.all {
+        ideConfigGenerated(false)
     }
 
-    // This metadata is used to fill out the information inside
-    // the metadata files found in the templates folder.
-    metadata {
-        modId = mod.id
-        modName = mod.name
-        modVersion = "${mod.version}+$minecraft"
-        modGroup = mod.group
-        modAuthor = mod.authors
-        modLicense = mod.license
-        modDescription = mod.description
-
-        fun <K: Any, V: Any> MapProperty<K, V>.populate(block: MapProperty<K, V>.() -> Unit) {
-            block()
+    runs {
+        register("testClient") {
+            client()
+            name = "Test Client"
+            vmArgs("-Dmixin.debug.export=true")
+            runDir = "../../run"
+            ideConfigGenerated(true)
         }
-
-        replacementProperties.populate {
-            put("mod_homepage", mod.homepage)
-            put("mod_sources", mod.sources)
-            put("mod_issues", mod.issues)
-            put("mod_author_list", mod.authors.split(", ").joinToString("\",\""))
-            prop("deps.minecraft_range") { put("minecraft_range", it) }
-            prop("deps.neoforge_range") { put("neoforge_range", it) }
-        }
-    }
-
-    // Fabric Loom (Fabric)
-    loom {
-        prop("deps.fabric_loader") { fabricLoaderVersion = it }
-
-        // Configure loom like normal in this block.
-        configureLoom {
-            runConfigs.all {
-                ideConfigGenerated(false)
-            }
-
-            runs {
-                register("testClient") {
-                    client()
-                    name = "Test Client"
-                    vmArgs("-Dmixin.debug.export=true")
-                    runDir = "../../run"
-                    ideConfigGenerated(true)
-                }
-            }
-        }
-    }
-
-    mixin {
-        addMixinsToModManifest = true
-        configs.register(mod.id)
     }
 }
 
-// All dependencies should be specified through modstitch's proxy configuration.
-// Wondering where the "repositories" block is? Go to "stonecutter.gradle.kts"
-// If you want to create proxy configurations for more source sets, such as client source sets,
-// use the modstitch.createProxyConfigurations(sourceSets["client"]) function.
+fletchingTable {
+    mixins.create("main") {
+        mixin("default", "${mod.id}.mixins.json") {
+            env("CLIENT")
+        }
+    }
+}
+
+configurations.configureEach {
+    resolutionStrategy {
+        // make sure the desired version of loader is used. Sometimes old versions are pulled in transitively.
+        force("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
+    }
+}
+
 dependencies {
-    prop("deps.fapi") { modstitchModApi("net.fabricmc.fabric-api:fabric-api:${it}") }
+    minecraft("com.mojang:minecraft:${sc.current.version}")
+    mappings(loom.officialMojangMappings())
+
+    modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
+    modApi("net.fabricmc.fabric-api:fabric-api:${property("deps.fabric_api")}")
 }
 
-modstitch.onEnable {
-    modstitch.moddevgradle {
-        tasks.named("createMinecraftArtifacts") {
-            dependsOn("stonecutterGenerate")
+java {
+    targetCompatibility = requiredJava
+    sourceCompatibility = requiredJava
+}
+
+tasks {
+    processResources {
+        fun inputProps(props: Map<String, Any>): Map<String, Any> {
+            inputs.properties(*props.map { entry -> entry.key to entry.value }.toTypedArray() )
+            return props
         }
+
+        val props = inputProps(mapOf(
+            "mod_id" to mod.id,
+            "mod_name" to mod.name,
+            "mod_version" to version,
+            "mod_group" to mod.group,
+            "mod_author" to mod.authors,
+            "mod_license" to mod.license,
+            "mod_description" to mod.description,
+            "mod_homepage" to mod.homepage,
+            "mod_sources" to mod.sources,
+            "mod_issues" to mod.issues,
+            "mod_author_list" to mod.authors.split(", ").joinToString("\",\""),
+            "minecraft" to sc.current.version,
+            "minecraft_range" to minecraftRange
+        ))
+        filesMatching("fabric.mod.json") { expand(props) }
+
+        val mixinProps = inputProps(mapOf(
+            "compatibility_level" to "JAVA_${requiredJava.majorVersion}"
+        ))
+        filesMatching("*.mixins.json") { expand(mixinProps) }
     }
 
-    val finalJarTasks = listOf(
-        modstitch.finalJarTask
-    )
-
-    tasks.register<Copy>("buildAndCollect") {
+    register<Copy>("buildAndCollect") {
         group = "build"
 
-        finalJarTasks.forEach { jar ->
-            dependsOn(jar)
-            from(jar.flatMap { it.archiveFile })
-        }
-
+        from(layout.buildDirectory.dir("libs"))
+        include("*.jar")
         into(rootProject.layout.buildDirectory.file("libs/${mod.version}"))
+
         dependsOn("build")
+    }
+
+    register<Delete>("buildCollectAndClean") {
+        group = "build"
+
+        delete(layout.buildDirectory.dir("libs"))
+        delete(layout.buildDirectory.dir("devlibs"))
+
+        dependsOn("buildAndCollect")
     }
 }
 
-tasks.named("generateModMetadata") {
-    dependsOn("stonecutterGenerate")
-}
-
-tasks.register<Delete>("buildCollectAndClean") {
-    group = "build"
-
-    delete(layout.buildDirectory.dir("libs"))
-    delete(layout.buildDirectory.dir("devlibs"))
-
-    dependsOn("buildAndCollect")
+idea {
+    module {
+        isDownloadSources = true
+        isDownloadJavadoc = true
+    }
 }
