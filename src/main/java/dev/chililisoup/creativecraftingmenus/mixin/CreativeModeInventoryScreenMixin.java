@@ -7,12 +7,12 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
+import dev.chililisoup.creativecraftingmenus.config.ModConfig;
 import dev.chililisoup.creativecraftingmenus.gui.CreativeMenuTab;
 import dev.chililisoup.creativecraftingmenus.reg.CreativeMenuTabs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeInventoryListener;
@@ -43,8 +43,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import static dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus.TAB_SPACING;
 
 @Mixin(value = CreativeModeInventoryScreen.class, priority = 999)
 public abstract class CreativeModeInventoryScreenMixin extends AbstractContainerScreen<CreativeModeInventoryScreen.@NotNull ItemPickerMenu> {
@@ -89,18 +87,6 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     private void menuTabSubInit(CallbackInfo ci) {
         if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab)
             menuTab.subInit();
-
-        this.addRenderableWidget(new AbstractSliderButton(this.leftPos, 4, this.imageWidth, 20, Component.literal("9"), 9.0 / 16.0) {
-            @Override
-            protected void updateMessage() {
-                this.setMessage(Component.literal(String.valueOf(Math.round(this.value * 16.0))));
-            }
-
-            @Override
-            protected void applyValue() {
-                TAB_SPACING = (int) Math.round(this.value * 16.0);
-            }
-        });
     }
 
     @Inject(method = "selectTab", at = @At("HEAD"))
@@ -128,17 +114,19 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
 
     @Inject(method = "getTabX", at = @At("HEAD"), cancellable = true)
     private void getMenuTabX(CreativeModeTab tab, CallbackInfoReturnable<Integer> cir) {
-        if (tab instanceof CreativeMenuTab) cir.setReturnValue(this.imageWidth + TAB_SPACING);
+        if (tab instanceof CreativeMenuTab)
+            cir.setReturnValue(this.imageWidth + ModConfig.HANDLER.instance().tabSpacingX);
     }
 
     @Inject(method = "getTabY", at = @At("HEAD"), cancellable = true)
     private void getMenuTabY(CreativeModeTab tab, CallbackInfoReturnable<Integer> cir) {
         if (tab instanceof CreativeMenuTab) {
+            int tabSpacingY = ModConfig.HANDLER.instance().tabSpacingY;
             int count = CreativeMenuTabs.MENU_TABS.size();
             int index = CreativeMenuTabs.MENU_TABS.indexOf(tab);
-            int size = (count - 1) * TAB_SPACING + count * 26;
+            int size = (count - 1) * tabSpacingY + count * 26;
             int top = (this.height - size) / 2;
-            cir.setReturnValue(top + index * (26 + TAB_SPACING) - this.topPos);
+            cir.setReturnValue(top + index * (26 + tabSpacingY) - this.topPos);
         }
     }
 

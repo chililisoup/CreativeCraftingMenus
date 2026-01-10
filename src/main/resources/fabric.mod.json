@@ -16,14 +16,15 @@
   "entrypoints": {
     "client": [
       "dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus"
+    ],
+    "modmenu": [
+      "dev.chililisoup.creativecraftingmenus.compat.ModMenuIntegration"
     ]
   },
   "accessWidener" : "${mod_id}.classtweaker",
   "depends": {
     "fabricloader": ">=0.18",
-    "minecraft": "${minecraft_range}"
-  },
-  "recommends": {
+    "minecraft": "${minecraft_range}",
     "fabric-api": "*",
     "yet_another_config_lib_v3": "*"
   }

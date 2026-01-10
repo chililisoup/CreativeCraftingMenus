@@ -80,6 +80,9 @@ dependencies {
 
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
     modApi("net.fabricmc.fabric-api:fabric-api:${property("deps.fabric_api")}")
+    modImplementation("dev.isxander:yet-another-config-lib:${property("deps.yacl")}-fabric")
+
+    modCompileOnly("com.terraformersmc:modmenu:${property("deps.modmenu")}")
 }
 
 java {
