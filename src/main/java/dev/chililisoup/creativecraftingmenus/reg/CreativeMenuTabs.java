@@ -27,12 +27,6 @@ public class CreativeMenuTabs {
                 ),
                 register(
                         CraftingMenuTab::new,
-                        "cartography_menu",
-                        "container.cartography_table",
-                        Items.CARTOGRAPHY_TABLE::getDefaultInstance
-                ),
-                register(
-                        CraftingMenuTab::new,
                         "crafting_menu",
                         "container.crafting",
                         Items.CRAFTING_TABLE::getDefaultInstance
