@@ -9,6 +9,7 @@ import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
 import dev.chililisoup.creativecraftingmenus.config.ModConfig;
 import dev.chililisoup.creativecraftingmenus.gui.CreativeMenuTab;
+import dev.chililisoup.creativecraftingmenus.gui.LoomMenuTab;
 import dev.chililisoup.creativecraftingmenus.reg.CreativeMenuTabs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -46,6 +47,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = CreativeModeInventoryScreen.class, priority = 999)
 public abstract class CreativeModeInventoryScreenMixin extends AbstractContainerScreen<CreativeModeInventoryScreen.@NotNull ItemPickerMenu> {
+    @Unique private static final Identifier CRAFTING_INVENTORY_BACKGROUND =
+            CreativeCraftingMenus.id("textures/gui/container/creative_crafting_inventory.png");
+    @Unique private static final Identifier ALT_LOOM_MENU_BACKGROUND =
+            CreativeCraftingMenus.id("textures/gui/container/creative_loom_menu_alt.png");
     @Unique private static final Identifier SELECTED_MENU_TAB = CreativeCraftingMenus.id("container/creative_menu_tab_selected");
     @Unique private static final Identifier UNSELECTED_MENU_TAB = CreativeCraftingMenus.id("container/creative_menu_tab_unselected");
 
@@ -57,6 +62,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     @Shadow protected abstract boolean checkTabClicked(CreativeModeTab tab, double x, double y);
     @Shadow protected abstract int getTabX(CreativeModeTab tab);
     @Shadow protected abstract int getTabY(CreativeModeTab tab);
+    @Shadow public abstract boolean isInventoryOpen();
     @Shadow private static CreativeModeTab selectedTab;
     @Shadow private CreativeInventoryListener listener;
     @Shadow private EditBox searchBox;
@@ -227,9 +233,12 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     private boolean clearMenuTabSlots(Object left, Object right, Operation<Boolean> original, @Local(argsOnly = true) ClickType clickType) {
         boolean base = original.call(left, right);
         if (!base) return false;
-        if (!(selectedTab instanceof CreativeMenuTab<?, ?>)) return true;
+        if (!(selectedTab instanceof CreativeMenuTab)) return true;
         if (clickType == ClickType.QUICK_MOVE)
-            this.menu.slots.forEach(slot -> slot.set(ItemStack.EMPTY));
+            this.menu.slots.forEach(slot -> {
+                if (slot.mayPlace(ItemStack.EMPTY))
+                    slot.set(ItemStack.EMPTY);
+            });
         return true;
     }
 
@@ -246,7 +255,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
 
     @Inject(method = "charTyped", at = @At("HEAD"), cancellable = true)
     private void allowMenuTabTyping(CharacterEvent characterEvent, CallbackInfoReturnable<Boolean> cir) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?>)
+        if (selectedTab instanceof CreativeMenuTab)
             cir.setReturnValue(super.charTyped(characterEvent));
     }
 
@@ -307,22 +316,12 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     }
 
     @WrapOperation(
-            method = "renderBg", at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/inventory/InventoryScreen;renderEntityInInventoryFollowsMouse(Lnet/minecraft/client/gui/GuiGraphics;IIIIIFFFLnet/minecraft/world/entity/LivingEntity;)V"
-    ))
-    private static void movePaperDoll(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int m, float f, float g, float h, LivingEntity livingEntity, Operation<Void> original) {
-        if (selectedTab instanceof CreativeMenuTab) return;
-        original.call(guiGraphics, x1 - 27, y1, x2 - 27, y2, m, f, g, h, livingEntity);
-    }
-
-    @WrapOperation(
             method = "selectTab", at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/core/NonNullList;size()I"
     ))
     private int positionMenuTabInventorySlots(NonNullList<?> instance, Operation<Integer> original, @Local AbstractContainerMenu abstractContainerMenu) {
-        if (!(selectedTab instanceof CreativeMenuTab<?, ?>)) return original.call(instance);
+        if (!(selectedTab instanceof CreativeMenuTab)) return original.call(instance);
 
         for (int i = 9; i < 45; i++) {
             CreativeModeInventoryScreen.SlotWrapper wrapped = new CreativeModeInventoryScreen.SlotWrapper(
@@ -359,24 +358,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
 
     @Inject(method = "isInventoryOpen", at = @At("HEAD"), cancellable = true)
     private void ignoreMenuTabs(CallbackInfoReturnable<Boolean> cir) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?>) cir.setReturnValue(false);
-    }
-
-    @WrapOperation(
-            method = "selectTab", at = @At(
-            value = "NEW",
-            target = "Lnet/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen$SlotWrapper;"
-    ))
-    private static CreativeModeInventoryScreen.SlotWrapper moveSlots(Slot slot, int index, int x, int y, Operation<CreativeModeInventoryScreen.SlotWrapper> original) {
-        if (index == 0) {
-            x = 173;
-            y = 20;
-        } else if (index >= 1 && index < 5) {
-            x = 117 + ((index + 1) % 2) * 18;
-            y = 10 + ((index - 1) / 2) * 18;
-        } else if ((index >= 5 && index < 9) || index == 45)
-            x -= 27;
-        return original.call(slot, index, x, y);
+        if (selectedTab instanceof CreativeMenuTab) cir.setReturnValue(false);
     }
 
     @WrapOperation(
@@ -387,5 +369,51 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     private static Slot moveDestroyItemSlot(Container container, int index, int x, int y, Operation<Slot> original) {
         if (selectedTab instanceof CreativeMenuTab) y += 30;
         return original.call(container, index, x, y);
+    }
+
+    @WrapOperation(
+            method = "selectTab", at = @At(
+            value = "NEW",
+            target = "Lnet/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen$SlotWrapper;"
+    ))
+    private static CreativeModeInventoryScreen.SlotWrapper moveSlots(Slot slot, int index, int x, int y, Operation<CreativeModeInventoryScreen.SlotWrapper> original) {
+        if (ModConfig.HANDLER.instance().inventoryCraftingGrid) {
+            if (index == 0) {
+                x = 173;
+                y = 20;
+            } else if (index >= 1 && index < 5) {
+                x = 117 + ((index + 1) % 2) * 18;
+                y = 10 + ((index - 1) / 2) * 18;
+            } else if ((index >= 5 && index < 9) || index == 45)
+                x -= 27;
+        }
+
+        return original.call(slot, index, x, y);
+    }
+
+    @WrapOperation(
+            method = "renderBg", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/screens/inventory/InventoryScreen;renderEntityInInventoryFollowsMouse(Lnet/minecraft/client/gui/GuiGraphics;IIIIIFFFLnet/minecraft/world/entity/LivingEntity;)V"
+    ))
+    private static void movePaperDoll(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int a, float b, float c, float d, LivingEntity livingEntity, Operation<Void> original) {
+        if (selectedTab instanceof CreativeMenuTab) return;
+        if (ModConfig.HANDLER.instance().inventoryCraftingGrid)
+            original.call(guiGraphics, x1 - 27, y1, x2 - 27, y2, a, b, c, d, livingEntity);
+        else original.call(guiGraphics, x1, y1, x2, y2, a, b, c, d, livingEntity);
+    }
+
+    @WrapOperation(
+            method = "renderBg", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/item/CreativeModeTab;getBackgroundTexture()Lnet/minecraft/resources/Identifier;"
+    ))
+    private Identifier swapBackgroundTexture(CreativeModeTab instance, Operation<Identifier> original) {
+        if (instance instanceof LoomMenuTab) return ModConfig.HANDLER.instance().altLoomMenu ?
+                ALT_LOOM_MENU_BACKGROUND :
+                original.call(instance);
+        else return this.isInventoryOpen() && ModConfig.HANDLER.instance().inventoryCraftingGrid ?
+                CRAFTING_INVENTORY_BACKGROUND :
+                original.call(instance);
     }
 }

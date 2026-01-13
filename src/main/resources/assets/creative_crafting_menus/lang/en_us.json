@@ -2,9 +2,26 @@
   "container.creative_crafting_menus.smithing.trim_pattern": "Trim Pattern",
   "container.creative_crafting_menus.smithing.trim_material": "Trim Material",
   "container.creative_crafting_menus.smithing.item_material": "Item Material",
+  "container.creative_crafting_menus.loom.pattern": "Pattern",
+  "container.creative_crafting_menus.loom.layers": "Layers",
+  "container.creative_crafting_menus.loom.presets": "Presets",
+  "container.creative_crafting_menus.loom.add_button": "Add Layer",
+  "container.creative_crafting_menus.loom.remove_button": "Remove Selected Layer",
+  "container.creative_crafting_menus.loom.clear_button": "Reset Banner",
+  "container.creative_crafting_menus.loom.move_layer_up": "Move Layer Up",
+  "container.creative_crafting_menus.loom.move_layer_down": "Move Layer Down",
+
   "creative_crafting_menus.config": "Creative Crafting Menus Config",
+  "creative_crafting_menus.config.inventoryCraftingGrid": "Inventory Crafting Grid",
+  "creative_crafting_menus.config.inventoryCraftingGrid.desc": "Adds a 2x2 crafting grid to the creative menu's survival inventory",
   "creative_crafting_menus.config.tabSpacingX": "Horizontal Tab Spacing",
   "creative_crafting_menus.config.tabSpacingX.desc": "Horizontal spacing around the creative menu crafting tabs",
   "creative_crafting_menus.config.tabSpacingY": "Vertical Tab Spacing",
-  "creative_crafting_menus.config.tabSpacingY.desc": "Vertical spacing around the creative menu crafting tabs"
+  "creative_crafting_menus.config.tabSpacingY.desc": "Vertical spacing around the creative menu crafting tabs",
+  "creative_crafting_menus.config.dyeItemColorIcons": "Dye Item Color Icons",
+  "creative_crafting_menus.config.dyeItemColorIcons.desc": "Whether dye pickers should use dye items for their icons instead of colored squares",
+  "creative_crafting_menus.config.bannerTooltipChanges.desc": "Allows the mod to make changes to banner item tooltips",
+  "creative_crafting_menus.config.bannerTooltipChanges": "Enable Banner Tooltip Changes",
+  "creative_crafting_menus.config.altLoomMenu": "Alternate Loom Menu",
+  "creative_crafting_menus.config.altLoomMenu.desc": "Moves the creative loom menu's quick layer buttons to the bottom"
 }

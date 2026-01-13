@@ -32,7 +32,7 @@ public class CreativeMenuTabs {
                         Items.CRAFTING_TABLE::getDefaultInstance
                 ),
                 register(
-                        CraftingMenuTab::new,
+                        LoomMenuTab::new,
                         "loom_menu",
                         "container.loom",
                         Items.LOOM::getDefaultInstance

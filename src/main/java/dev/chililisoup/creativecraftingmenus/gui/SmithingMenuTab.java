@@ -52,9 +52,6 @@ import static net.minecraft.client.gui.screens.inventory.SmithingScreen.ARMOR_ST
 import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.*;
 
 public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTabMenu, SmithingMenuTab> {
-    private static final Identifier SELECTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_selected");
-    private static final Identifier HIGHLIGHTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_highlighted");
-    private static final Identifier UNSELECTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_unselected");
     private static final Identifier PLACEHOLDER_TRIM = CreativeCraftingMenus.id("container/placeholder_trim_smithing_template");
     private static final Set<TagKey<@NotNull Item>> MATERIAL_SWAP_TAGS = Set.of(
             ItemTags.SWORDS,
@@ -349,9 +346,9 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         for (int i = 0; i < Page.values().length; i++) {
             Page page = Page.values()[i];
             if (page == this.selectedPage) continue;
+
             int x = this.screen.leftPos + 33;
             int y = this.screen.topPos + 15 + i * 19;
-
             if (mouseX >= x && mouseY >= y && mouseX < x + 16 && mouseY < y + 18)
                 return page;
         }
@@ -366,7 +363,6 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         for (int i = this.startIndex; i < contents.size() && i < 12 + this.startIndex; i++) {
             int x = this.screen.leftPos + 51 + ((i - this.startIndex) % 4) * 16;
             int y = this.screen.topPos + 16 + ((i - this.startIndex) / 4) * 18;
-
             if (mouseX >= x && mouseY >= y && mouseX < x + 16 && mouseY < y + 18)
                 return contents.get(i);
         }
@@ -412,7 +408,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     }
 
     private int getOffscreenRows() {
-        return (this.pageContents.size() + 4 - 1) / 4 - 3;
+        return (this.pageContents.size() - 9) / 4;
     }
 
     @Override
@@ -434,7 +430,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
             int offscreenRows = this.getOffscreenRows();
             float deltaY = (float) distance / offscreenRows;
             this.scrollOffs = Mth.clamp(this.scrollOffs - deltaY, 0.0F, 1.0F);
-            this.startIndex = (int)(this.scrollOffs * offscreenRows + 0.5) * 4;
+            this.startIndex = (int) (this.scrollOffs * offscreenRows + 0.5) * 4;
         }
 
         return true;
@@ -508,19 +504,19 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     }
 
     private enum Page {
-        TRIM_PATTERN (
+        TRIM_PATTERN(
                 Component.translatable("container.creative_crafting_menus.smithing.trim_pattern"),
                 Items.SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE.getDefaultInstance(),
                 SmithingMenuTab::getTrimPatternPageContents,
                 SmithingMenuTab::getTrimPatternPageClickActions
         ),
-        TRIM_MATERIAL (
+        TRIM_MATERIAL(
                 Component.translatable("container.creative_crafting_menus.smithing.trim_material"),
                 Items.AMETHYST_SHARD.getDefaultInstance(),
                 SmithingMenuTab::getTrimMaterialPageContents,
                 SmithingMenuTab::getTrimMaterialPageClickActions
         ),
-        ITEM_MATERIAL (
+        ITEM_MATERIAL(
                 Component.translatable("container.creative_crafting_menus.smithing.item_material"),
                 Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE.getDefaultInstance(),
                 SmithingMenuTab::getItemMaterialPageContents,
