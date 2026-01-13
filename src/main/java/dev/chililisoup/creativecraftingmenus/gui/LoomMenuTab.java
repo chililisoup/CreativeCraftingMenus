@@ -560,7 +560,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
     }
 
     private int getOffscreenRows() {
-        return this.selectedPage.getOffscreenRows.apply(this);
+        return Math.max(this.selectedPage.getOffscreenRows.apply(this), 0);
     }
 
     @Override
