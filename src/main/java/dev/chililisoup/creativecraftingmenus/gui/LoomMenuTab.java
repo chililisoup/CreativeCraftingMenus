@@ -410,14 +410,25 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
             boolean downVisible = i > 0 && i < size - 1;
 
             int layer = i - 1;
+            boolean selected = instance.selectedLayer == layer;
 
             if (upVisible && mouseX >= left + 45 && mouseY >= y && mouseX < left + 56 && mouseY < y + 7)
-                return () -> instance.menu.moveLayer(layer, -1);
+                return () -> {
+                    if (selected) instance.selectedLayer--;
+                    else if (instance.selectedLayer == layer - 1)
+                        instance.selectedLayer++;
+                    instance.menu.moveLayer(layer, -1);
+                };
 
             if (downVisible && mouseX >= left + 45 && mouseY >= y + 7 && mouseX < left + 56 && mouseY < y + 14)
-                return () -> instance.menu.moveLayer(layer, 1);
+                return () -> {
+                    if (selected) instance.selectedLayer++;
+                    else if (instance.selectedLayer == layer + 1)
+                        instance.selectedLayer--;
+                    instance.menu.moveLayer(layer, 1);
+                };
 
-            if (instance.selectedLayer != i - 1 && mouseX >= left && mouseY >= y && mouseX < left + 56 && mouseY < y + 14)
+            if (!selected && mouseX >= left && mouseY >= y && mouseX < left + 56 && mouseY < y + 14)
                 return () -> {
                     instance.selectedLayer = layer;
                     instance.update();
