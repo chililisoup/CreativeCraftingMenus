@@ -22,9 +22,14 @@ import java.util.stream.Collectors;
 public abstract class BannerPresets {
     private static boolean LOADED = false;
     private static final HashMap<String, PresetGroupItem> GROUPS = new HashMap<>();
+    private static final HashMap<String, PresetGroupItem> BUILT_IN_GROUPS = new HashMap<>();
 
     public static @Nullable PresetGroupItem get(String key) {
         return GROUPS.get(key);
+    }
+
+    public static @Nullable PresetGroupItem getBuiltIn(String key) {
+        return BUILT_IN_GROUPS.get(key);
     }
 
     public static boolean has(String key) {
@@ -46,25 +51,45 @@ public abstract class BannerPresets {
         return true;
     }
 
+    public static boolean renameGroup(String from, String to) {
+        if (from.equals(to) || !has(from) || has(to)) return false;
+        GROUPS.put(to, GROUPS.get(from));
+        GROUPS.remove(from);
+        return true;
+    }
+
     public static int size() {
         return GROUPS.size();
+    }
+
+    public static int builtInSize() {
+        return BUILT_IN_GROUPS.size();
     }
 
     public static Set<Map.Entry<String, PresetGroupItem>> entries() {
         return GROUPS.entrySet();
     }
 
-    public static List<PresetGroupItem> groups() {
-        return List.copyOf(GROUPS.values());
+    public static Set<Map.Entry<String, PresetGroupItem>> builtInEntries() {
+        return BUILT_IN_GROUPS.entrySet();
+    }
+
+    public static List<PresetGroupItem> allGroups() {
+        ArrayList<PresetGroupItem> allGroups = new ArrayList<>(GROUPS.values());
+        allGroups.addAll(BUILT_IN_GROUPS.values());
+        return allGroups;
     }
 
     public static void load() {
         if (LOADED) return;
         deserialize(ModConfig.HANDLER.instance().bannerPresets);
 
-        ModConfig.HANDLER.defaults().bannerPresets.forEach((key, group) -> {
-            if (!has(key)) GROUPS.put(key, deserializeGroup(group));
-        });
+        Map.of(
+                "Alphabet", DefaultBannerPresets.ALPHABET,
+                "Symbols", DefaultBannerPresets.SYMBOLS,
+                "Math", DefaultBannerPresets.MATH,
+                "Pride", DefaultBannerPresets.PRIDE
+        ).forEach((key, group) -> BUILT_IN_GROUPS.put(key, deserializeGroup(group)));
 
         LOADED = true;
     }
@@ -74,6 +99,7 @@ public abstract class BannerPresets {
         ModConfig.HANDLER.instance().bannerPresets = serialize();
         ModConfig.HANDLER.save();
         GROUPS.clear();
+        BUILT_IN_GROUPS.clear();
         LOADED = false;
     }
 

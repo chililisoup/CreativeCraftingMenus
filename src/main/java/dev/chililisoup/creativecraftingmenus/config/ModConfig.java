@@ -43,12 +43,7 @@ public class ModConfig {
     public boolean altLoomMenu = false;
 
     @SerialEntry
-    public Map<String, BannerPresets.BannerPresetItem.SerializedBannerPresetItem[]> bannerPresets = Map.of(
-            "Alphabet", DefaultBannerPresets.ALPHABET,
-            "Symbols", DefaultBannerPresets.SYMBOLS,
-            "Math", DefaultBannerPresets.MATH,
-            "Pride", DefaultBannerPresets.PRIDE
-    );
+    public Map<String, BannerPresets.BannerPresetItem.SerializedBannerPresetItem[]> bannerPresets = Map.of();
 
     public Screen generateScreen(Screen parentScreen) {
         Component name = Component.translatable("creative_crafting_menus.config");

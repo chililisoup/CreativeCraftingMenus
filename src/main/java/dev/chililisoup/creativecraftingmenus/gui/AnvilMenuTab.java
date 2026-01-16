@@ -90,8 +90,6 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu, Anv
                     21
             );
         }
-
-        this.name.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
