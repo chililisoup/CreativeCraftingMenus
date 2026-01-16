@@ -212,7 +212,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
 
             guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    item.selected ? SELECTED_BUTTON : (hovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON),
+                    item.selected ? BUTTON_SELECTED : (hovered ? BUTTON_HIGHLIGHTED : BUTTON),
                     x,
                     y,
                     16,

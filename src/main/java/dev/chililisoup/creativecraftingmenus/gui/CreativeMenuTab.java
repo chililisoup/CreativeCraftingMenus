@@ -21,9 +21,10 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
     protected static final Identifier SELECTED_TAB = CreativeCraftingMenus.id("widget/inner_tab_selected");
     protected static final Identifier HIGHLIGHTED_TAB = CreativeCraftingMenus.id("widget/inner_tab_highlighted");
     protected static final Identifier UNSELECTED_TAB = CreativeCraftingMenus.id("widget/inner_tab_unselected");
-    protected static final Identifier SELECTED_BUTTON = CreativeCraftingMenus.id("widget/button_selected");
-    protected static final Identifier HIGHLIGHTED_BUTTON = CreativeCraftingMenus.id("widget/button_highlighted");
-    protected static final Identifier UNSELECTED_BUTTON = CreativeCraftingMenus.id("widget/button_unselected");
+    protected static final Identifier BUTTON_SELECTED = CreativeCraftingMenus.id("widget/button_selected");
+    protected static final Identifier BUTTON_HIGHLIGHTED = CreativeCraftingMenus.id("widget/button_highlighted");
+    protected static final Identifier BUTTON = CreativeCraftingMenus.id("widget/button_unselected");
+    protected static final Identifier BUTTON_DISABLED = CreativeCraftingMenus.id("widget/button_disabled");
     protected static final Identifier ARROW_UP = CreativeCraftingMenus.id("widget/arrow_up");
     protected static final Identifier ARROW_UP_HIGHLIGHTED = CreativeCraftingMenus.id("widget/arrow_up_highlighted");
     protected static final Identifier ARROW_DOWN = CreativeCraftingMenus.id("widget/arrow_down");

@@ -28,6 +28,3 @@ accessible field net/minecraft/client/gui/screens/inventory/StonecutterScreen SC
 accessible field net/minecraft/client/gui/screens/inventory/StonecutterScreen SCROLLER_DISABLED_SPRITE Lnet/minecraft/resources/Identifier;
 accessible field net/minecraft/client/gui/screens/inventory/LoomScreen SCROLLER_SPRITE Lnet/minecraft/resources/Identifier;
 accessible field net/minecraft/client/gui/screens/inventory/LoomScreen SCROLLER_DISABLED_SPRITE Lnet/minecraft/resources/Identifier;
-accessible field net/minecraft/client/gui/screens/inventory/LoomScreen PATTERN_SELECTED_SPRITE Lnet/minecraft/resources/Identifier;
-accessible field net/minecraft/client/gui/screens/inventory/LoomScreen PATTERN_HIGHLIGHTED_SPRITE Lnet/minecraft/resources/Identifier;
-accessible field net/minecraft/client/gui/screens/inventory/LoomScreen PATTERN_SPRITE Lnet/minecraft/resources/Identifier;

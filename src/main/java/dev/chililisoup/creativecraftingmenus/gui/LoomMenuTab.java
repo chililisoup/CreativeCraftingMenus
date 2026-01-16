@@ -36,7 +36,7 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -65,6 +65,8 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
     private int startIndex;
     private BannerFlagModel flag;
     private BannerFlagModel smallFlag;
+    private ItemStack randomPresetBanner = Items.WHITE_BANNER.getDefaultInstance();
+    private long randomPresetBannerTimer = System.currentTimeMillis();
 
     public LoomMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
         super(LoomTabMenu::new, displayName, iconGenerator);
@@ -95,6 +97,13 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
             this.pageRenderer = this.selectedPage.rendererSupplier.apply(this);
     }
 
+    private void newRandomPresetBanner() {
+        ArrayList<BannerPresets.BannerPresetItem> banners = new ArrayList<>();
+        BannerPresets.groups().forEach(group -> banners.addAll(group.banners()));
+        if (!banners.isEmpty()) this.randomPresetBanner = banners.get(Mth.floor(Math.random() * banners.size())).item();
+        this.randomPresetBannerTimer = System.currentTimeMillis();
+    }
+
     @Override
     public void drawTitle(TitleDrawer titleDrawer, int x, int y, int color) {
         super.drawTitle(titleDrawer, x, y - 2, color);
@@ -117,6 +126,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
                 screen.leftPos + 186,
                 screen.topPos + 48
         );
+
+        if (System.currentTimeMillis() - this.randomPresetBannerTimer > 2000)
+            this.newRandomPresetBanner();
 
         for (int i = 0; i < Page.values().length; i++) {
             Page page = Page.values()[i];
@@ -141,7 +153,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().translate(x, y + 1);
-            page.iconRenderer.accept(guiGraphics);
+            page.iconRenderer.accept(this, guiGraphics);
             guiGraphics.pose().popMatrix();
         }
 
@@ -211,7 +223,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
                     i == 2 && this.selectedPresetGroup != null &&
                     BannerPresets.isGroupEmpty(this.selectedPresetGroup);
 
-            boolean disabled = presetsPage && ((i == 2 && !deletableGroup) || this.selectedPresetGroup == null);
+            boolean disabled = presetsPage ?
+                    (i == 2 && !deletableGroup) || this.selectedPresetGroup == null :
+                    i == 1 && this.selectedLayer < 0;
             boolean hovered = !disabled && mouseX >= x && mouseY >= top && mouseX < x + 18 && mouseY < top + 13;
             if (hovered) {
                 guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
@@ -262,7 +276,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
             guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    selected ? SELECTED_BUTTON : (hovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON),
+                    selected ? BUTTON_SELECTED : (hovered ? BUTTON_HIGHLIGHTED : BUTTON),
                     x,
                     y,
                     14,
@@ -298,8 +312,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
                 int y = top + ((i - instance.startIndex) / 4) * 14;
 
                 Holder<@NotNull BannerPattern> pattern = instance.patterns.get(i);
+                boolean disabled = selectedPattern == null;
                 boolean selected = selectedPattern == pattern;
-                boolean hovered = mouseX >= x && mouseY >= y && mouseX < x + 14 && mouseY < y + 14;
+                boolean hovered = !disabled && mouseX >= x && mouseY >= y && mouseX < x + 14 && mouseY < y + 14;
 
                 if (hovered) {
                     if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
@@ -312,7 +327,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
                 guiGraphics.blitSprite(
                         RenderPipelines.GUI_TEXTURED,
-                        selected ? PATTERN_SELECTED_SPRITE : (hovered ? PATTERN_HIGHLIGHTED_SPRITE : PATTERN_SPRITE),
+                        disabled ? BUTTON_DISABLED : (selected ? BUTTON_SELECTED : (hovered ? BUTTON_HIGHLIGHTED : BUTTON)),
                         x,
                         y,
                         14,
@@ -374,7 +389,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
                 guiGraphics.blitSprite(
                         RenderPipelines.GUI_TEXTURED,
-                        selected ? SELECTED_BUTTON : (hovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON),
+                        selected ? BUTTON_SELECTED : (hovered ? BUTTON_HIGHLIGHTED : BUTTON),
                         left,
                         y,
                         56,
@@ -431,7 +446,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
                     guiGraphics.blitSprite(
                             RenderPipelines.GUI_TEXTURED,
                             group != null ?
-                                    (hovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON) :
+                                    (hovered ? BUTTON_HIGHLIGHTED : BUTTON) :
                                     (hovered ? ADD_GROUP_BUTTON_HIGHLIGHTED : ADD_GROUP_BUTTON),
                             left,
                             y,
@@ -458,7 +473,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
                 guiGraphics.setTooltipForNextFrame(Component.translatable("gui.back"), mouseX, mouseY);
             }
 
-            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, SELECTED_BUTTON, left, top, 56, 14);
+            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, BUTTON_SELECTED, left, top, 56, 14);
 
             guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
@@ -492,7 +507,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
                 guiGraphics.blitSprite(
                         RenderPipelines.GUI_TEXTURED,
-                        bannerHovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON,
+                        bannerHovered ? BUTTON_HIGHLIGHTED : BUTTON,
                         x,
                         y,
                         11,
@@ -520,7 +535,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
             guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    hovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON,
+                    hovered ? BUTTON_HIGHLIGHTED : BUTTON,
                     left,
                     y,
                     56,
@@ -669,8 +684,10 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         boolean presetsPage = this.selectedPage == Page.PRESETS;
         if (presetsPage && this.selectedPresetGroup == null) return -1;
         for (int i = 0; i < 3; i++) {
-            boolean deletableGroup = presetsPage && i == 2 && BannerPresets.isGroupEmpty(this.selectedPresetGroup);
-            if (presetsPage && i == 2 && !deletableGroup) continue;
+            if (presetsPage) {
+                if (i == 2 && !BannerPresets.isGroupEmpty(this.selectedPresetGroup)) continue;
+            } else if (i == 1 && this.selectedLayer < 0) continue;
+
             int x = left + i * 20;
             if (mouseX >= x && mouseY >= top && mouseX < x + 18 && mouseY < top + 13)
                 return i;
@@ -755,13 +772,12 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
                     BannerPresets.BannerPresetItem banner = BannerPresets.BannerPresetItem.of(this.menu.resultSlots.getItem(0));
                     if (button == 0) {
                         if (group.addBanner(banner))
-                            BannerPresets.save();
+                            this.update();
                     } else if (button == 1) {
                         if (group.removeBanner(banner))
-                            BannerPresets.save();
+                            this.update();
                     } else {
                         if (BannerPresets.deleteGroup(this.selectedPresetGroup)) {
-                            BannerPresets.save();
                             this.selectedPresetGroup = null;
                             this.scrollOffs = 0F;
                             this.update();
@@ -873,7 +889,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
     private enum Page {
         PATTERN(
                 Component.translatable("container.creative_crafting_menus.loom.pattern"),
-                guiGraphics -> guiGraphics.renderItem(Items.CREEPER_BANNER_PATTERN.getDefaultInstance(), 0, 0),
+                (instance, guiGraphics) -> guiGraphics.renderItem(Items.CREEPER_BANNER_PATTERN.getDefaultInstance(), 0, 0),
                 LoomMenuTab::getPatternPageRenderer,
                 LoomMenuTab::checkPatternPageClicked,
                 menuTab -> (menuTab.patterns.size() - 13) / 4,
@@ -881,7 +897,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         ),
         LAYERS(
                 Component.translatable("container.creative_crafting_menus.loom.layers"),
-                guiGraphics -> guiGraphics.blitSprite(
+                (instance, guiGraphics) -> guiGraphics.blitSprite(
                         RenderPipelines.GUI_TEXTURED, LAYERS_ICON, 0, 0, 16, 16
                 ),
                 LoomMenuTab::getLayersPageRenderer,
@@ -891,7 +907,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         ),
         PRESETS(
                 Component.translatable("container.creative_crafting_menus.loom.presets"),
-                guiGraphics -> guiGraphics.renderItem(Items.WHITE_BANNER.getDefaultInstance(), 0, 0),
+                (instance, guiGraphics) -> guiGraphics.renderItem(instance.randomPresetBanner, 0, 0),
                 LoomMenuTab::getPresetsPageRenderer,
                 LoomMenuTab::checkPresetsPageClicked,
                 menuTab -> {
@@ -905,7 +921,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         );
 
         private final Component tooltip;
-        private final Consumer<GuiGraphics> iconRenderer;
+        private final BiConsumer<LoomMenuTab, GuiGraphics> iconRenderer;
         private final Function<LoomMenuTab, RenderFunction> rendererSupplier;
         private final ClickChecker clickChecker;
         private final Function<LoomMenuTab, Integer> getOffscreenRows;
@@ -913,7 +929,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
         Page(
                 final Component tooltip,
-                final Consumer<GuiGraphics> iconRenderer,
+                final BiConsumer<LoomMenuTab, GuiGraphics> iconRenderer,
                 final Function<LoomMenuTab, RenderFunction> rendererSupplier,
                 final ClickChecker clickChecker,
                 final Function<LoomMenuTab, Integer> getOffscreenRows,
@@ -991,7 +1007,10 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
             itemStack.update(
                     DataComponents.BANNER_PATTERNS,
                     BannerPatternLayers.EMPTY,
-                    bannerPatternLayers -> new BannerPatternLayers.Builder().addAll(bannerPatternLayers).add(pattern, DyeColor.WHITE).build()
+                    bannerPatternLayers -> new BannerPatternLayers.Builder().addAll(bannerPatternLayers).add(
+                            pattern,
+                            this.getBannerItem().getColor() == DyeColor.WHITE ? DyeColor.BLACK : DyeColor.WHITE
+                    ).build()
             );
             this.menuTab.update();
         }

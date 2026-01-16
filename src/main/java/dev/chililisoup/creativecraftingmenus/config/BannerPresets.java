@@ -54,38 +54,49 @@ public abstract class BannerPresets {
         return GROUPS.entrySet();
     }
 
-    public static void save() {
-        if (!LOADED) return;
-        ModConfig.HANDLER.instance().bannerPresets = serialize();
-        ModConfig.HANDLER.save();
+    public static List<PresetGroupItem> groups() {
+        return List.copyOf(GROUPS.values());
     }
 
     public static void load() {
         if (LOADED) return;
         deserialize(ModConfig.HANDLER.instance().bannerPresets);
+
+        ModConfig.HANDLER.defaults().bannerPresets.forEach((key, group) -> {
+            if (!has(key)) GROUPS.put(key, deserializeGroup(group));
+        });
+
         LOADED = true;
     }
 
     public static void unload() {
         if (!LOADED) return;
+        ModConfig.HANDLER.instance().bannerPresets = serialize();
+        ModConfig.HANDLER.save();
         GROUPS.clear();
         LOADED = false;
     }
 
-    private static Map<String, PresetGroupItem.SerializedPresetGroupItem> serialize() {
+    private static Map<String, BannerPresetItem.SerializedBannerPresetItem[]> serialize() {
         return GROUPS.keySet().stream().collect(Collectors.toMap(
                 key -> key,
                 key -> GROUPS.get(key).serialize()
         ));
     }
 
-    private static void deserialize(Map<String, PresetGroupItem.SerializedPresetGroupItem> serializedGroups) {
+    private static void deserialize(Map<String, BannerPresetItem.SerializedBannerPresetItem[]> serializedGroups) {
         GROUPS.clear();
         GROUPS.putAll(
                 serializedGroups.keySet().stream().collect(Collectors.toMap(
                         key -> key,
-                        key -> serializedGroups.get(key).deserialize()
+                        key -> deserializeGroup(serializedGroups.get(key))
                 ))
+        );
+    }
+
+    private static PresetGroupItem deserializeGroup(BannerPresetItem.SerializedBannerPresetItem[] serializedGroup) {
+        return new PresetGroupItem(
+                Arrays.stream(serializedGroup).map(BannerPresetItem.SerializedBannerPresetItem::deserialize).toList()
         );
     }
 
@@ -105,42 +116,29 @@ public abstract class BannerPresets {
             return index >= 0;
         }
 
-        private SerializedPresetGroupItem serialize() {
-            return new SerializedPresetGroupItem(this);
+        private BannerPresetItem.SerializedBannerPresetItem[] serialize() {
+            return this.banners.stream().map(BannerPresetItem::serialize)
+                    .toArray(BannerPresetItem.SerializedBannerPresetItem[]::new);
         }
 
-        public record SerializedPresetGroupItem(BannerPresetItem.SerializedBannerPresetItem[] banners) {
-            public SerializedPresetGroupItem(PresetGroupItem presets) {
-                this(presets.banners.stream().map(BannerPresetItem::serialize)
-                        .toArray(BannerPresetItem.SerializedBannerPresetItem[]::new)
-                );
+        public static class GroupBuilder {
+            ArrayList<BannerPresetItem.SerializedBannerPresetItem> banners = new ArrayList<>();
+
+            public GroupBuilder banner(
+                    DyeColor bannerColor,
+                    Function<
+                            BannerPresetItem.SerializedBannerPresetItem.BannerBuilder,
+                            BannerPresetItem.SerializedBannerPresetItem.BannerBuilder
+                            > bannerBuilder
+            ) {
+                BannerPresetItem.SerializedBannerPresetItem.BannerBuilder builder =
+                        new BannerPresetItem.SerializedBannerPresetItem.BannerBuilder(bannerColor);
+                this.banners.add(bannerBuilder.apply(builder).build());
+                return this;
             }
 
-            private PresetGroupItem deserialize() {
-                return new PresetGroupItem(
-                        Arrays.stream(this.banners).map(BannerPresetItem.SerializedBannerPresetItem::deserialize).toList()
-                );
-            }
-
-            public static class GroupBuilder {
-                ArrayList<BannerPresetItem.SerializedBannerPresetItem> banners = new ArrayList<>();
-
-                public GroupBuilder banner(
-                        DyeColor bannerColor,
-                        Function<
-                                BannerPresetItem.SerializedBannerPresetItem.BannerBuilder,
-                                BannerPresetItem.SerializedBannerPresetItem.BannerBuilder
-                        > bannerBuilder
-                ) {
-                    BannerPresetItem.SerializedBannerPresetItem.BannerBuilder builder =
-                            new BannerPresetItem.SerializedBannerPresetItem.BannerBuilder(bannerColor);
-                    this.banners.add(bannerBuilder.apply(builder).build());
-                    return this;
-                }
-
-                public SerializedPresetGroupItem build() {
-                    return new SerializedPresetGroupItem(this.banners.toArray(BannerPresetItem.SerializedBannerPresetItem[]::new));
-                }
+            public BannerPresetItem.SerializedBannerPresetItem[] build() {
+                return this.banners.toArray(BannerPresetItem.SerializedBannerPresetItem[]::new);
             }
         }
     }

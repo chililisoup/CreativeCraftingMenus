@@ -43,10 +43,11 @@ public class ModConfig {
     public boolean altLoomMenu = false;
 
     @SerialEntry
-    public Map<String, BannerPresets.PresetGroupItem.SerializedPresetGroupItem> bannerPresets = Map.of(
+    public Map<String, BannerPresets.BannerPresetItem.SerializedBannerPresetItem[]> bannerPresets = Map.of(
             "Alphabet", DefaultBannerPresets.ALPHABET,
             "Symbols", DefaultBannerPresets.SYMBOLS,
-            "Math", DefaultBannerPresets.MATH
+            "Math", DefaultBannerPresets.MATH,
+            "Pride", DefaultBannerPresets.PRIDE
     );
 
     public Screen generateScreen(Screen parentScreen) {
