@@ -49,10 +49,11 @@ import java.util.function.Supplier;
 
 import static net.minecraft.client.gui.screens.inventory.SmithingScreen.ARMOR_STAND_ANGLE;
 import static net.minecraft.client.gui.screens.inventory.SmithingScreen.ARMOR_STAND_TRANSLATION;
-import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.*;
+import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.SCROLLER_DISABLED_SPRITE;
+import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.SCROLLER_SPRITE;
 
 public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTabMenu, SmithingMenuTab> {
-    private static final Identifier PLACEHOLDER_TRIM = CreativeCraftingMenus.id("container/placeholder_trim_smithing_template");
+    private static final Identifier PLACEHOLDER_TRIM = CreativeCraftingMenus.id("icon/placeholder_trim_smithing_template");
     private static final Set<TagKey<@NotNull Item>> MATERIAL_SWAP_TAGS = Set.of(
             ItemTags.SWORDS,
             ItemTags.PICKAXES,
@@ -211,7 +212,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
 
             guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    item.selected ? RECIPE_SELECTED_SPRITE : (hovered ? RECIPE_HIGHLIGHTED_SPRITE : RECIPE_SPRITE),
+                    item.selected ? SELECTED_BUTTON : (hovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON),
                     x,
                     y,
                     16,

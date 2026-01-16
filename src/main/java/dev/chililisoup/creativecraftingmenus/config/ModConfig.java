@@ -11,6 +11,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.Map;
+
 public class ModConfig {
     public static ConfigClassHandler<ModConfig> HANDLER = ConfigClassHandler.createBuilder(ModConfig.class)
             .id(CreativeCraftingMenus.id("config"))
@@ -39,6 +41,13 @@ public class ModConfig {
 
     @SerialEntry(comment = "Moves the creative loom menu's quick layer buttons to the bottom")
     public boolean altLoomMenu = false;
+
+    @SerialEntry
+    public Map<String, BannerPresets.PresetGroupItem.SerializedPresetGroupItem> bannerPresets = Map.of(
+            "Alphabet", DefaultBannerPresets.ALPHABET,
+            "Symbols", DefaultBannerPresets.SYMBOLS,
+            "Math", DefaultBannerPresets.MATH
+    );
 
     public Screen generateScreen(Screen parentScreen) {
         Component name = Component.translatable("creative_crafting_menus.config");

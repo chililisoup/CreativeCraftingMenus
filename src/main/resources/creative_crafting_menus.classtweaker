@@ -26,9 +26,6 @@ accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ARMOR
 accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ARMOR_STAND_ANGLE Lorg/joml/Quaternionf;
 accessible field net/minecraft/client/gui/screens/inventory/StonecutterScreen SCROLLER_SPRITE Lnet/minecraft/resources/Identifier;
 accessible field net/minecraft/client/gui/screens/inventory/StonecutterScreen SCROLLER_DISABLED_SPRITE Lnet/minecraft/resources/Identifier;
-accessible field net/minecraft/client/gui/screens/inventory/StonecutterScreen RECIPE_SELECTED_SPRITE Lnet/minecraft/resources/Identifier;
-accessible field net/minecraft/client/gui/screens/inventory/StonecutterScreen RECIPE_HIGHLIGHTED_SPRITE Lnet/minecraft/resources/Identifier;
-accessible field net/minecraft/client/gui/screens/inventory/StonecutterScreen RECIPE_SPRITE Lnet/minecraft/resources/Identifier;
 accessible field net/minecraft/client/gui/screens/inventory/LoomScreen SCROLLER_SPRITE Lnet/minecraft/resources/Identifier;
 accessible field net/minecraft/client/gui/screens/inventory/LoomScreen SCROLLER_DISABLED_SPRITE Lnet/minecraft/resources/Identifier;
 accessible field net/minecraft/client/gui/screens/inventory/LoomScreen PATTERN_SELECTED_SPRITE Lnet/minecraft/resources/Identifier;

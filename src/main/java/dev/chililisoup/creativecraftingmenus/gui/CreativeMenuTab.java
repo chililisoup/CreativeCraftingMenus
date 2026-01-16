@@ -18,12 +18,18 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Supplier;
 
 public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<T>, T extends CreativeMenuTab<M, T>> extends CreativeModeTab {
-    protected static final Identifier SELECTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_selected");
-    protected static final Identifier HIGHLIGHTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_highlighted");
-    protected static final Identifier UNSELECTED_TAB = CreativeCraftingMenus.id("container/creative_menu_inner_tab_unselected");
-    protected static final Identifier SELECTED_DYE = CreativeCraftingMenus.id("container/dye_selected");
-    protected static final Identifier HIGHLIGHTED_DYE = CreativeCraftingMenus.id("container/dye_highlighted");
-    protected static final Identifier UNSELECTED_DYE = CreativeCraftingMenus.id("container/dye_unselected");
+    protected static final Identifier SELECTED_TAB = CreativeCraftingMenus.id("widget/inner_tab_selected");
+    protected static final Identifier HIGHLIGHTED_TAB = CreativeCraftingMenus.id("widget/inner_tab_highlighted");
+    protected static final Identifier UNSELECTED_TAB = CreativeCraftingMenus.id("widget/inner_tab_unselected");
+    protected static final Identifier SELECTED_BUTTON = CreativeCraftingMenus.id("widget/button_selected");
+    protected static final Identifier HIGHLIGHTED_BUTTON = CreativeCraftingMenus.id("widget/button_highlighted");
+    protected static final Identifier UNSELECTED_BUTTON = CreativeCraftingMenus.id("widget/button_unselected");
+    protected static final Identifier ARROW_UP = CreativeCraftingMenus.id("widget/arrow_up");
+    protected static final Identifier ARROW_UP_HIGHLIGHTED = CreativeCraftingMenus.id("widget/arrow_up_highlighted");
+    protected static final Identifier ARROW_DOWN = CreativeCraftingMenus.id("widget/arrow_down");
+    protected static final Identifier ARROW_DOWN_HIGHLIGHTED = CreativeCraftingMenus.id("widget/arrow_down_highlighted");
+    protected static final Identifier ARROW_BACK = CreativeCraftingMenus.id("widget/arrow_back");
+    protected static final Identifier ARROW_BACK_HIGHLIGHTED = CreativeCraftingMenus.id("widget/arrow_back_highlighted");
 
     private final TabMenuConstructor<M, T> menuConstructor;
     protected @Nullable AbstractContainerScreen<?> screen;

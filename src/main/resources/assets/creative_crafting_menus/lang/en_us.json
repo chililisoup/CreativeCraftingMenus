@@ -10,6 +10,10 @@
   "container.creative_crafting_menus.loom.clear_button": "Reset Banner",
   "container.creative_crafting_menus.loom.move_layer_up": "Move Layer Up",
   "container.creative_crafting_menus.loom.move_layer_down": "Move Layer Down",
+  "container.creative_crafting_menus.loom.add_button.presets": "Save Current Banner to Group",
+  "container.creative_crafting_menus.loom.remove_button.presets": "Remove Current Banner from Group",
+  "container.creative_crafting_menus.loom.clear_button.presets": "Delete Group",
+  "container.creative_crafting_menus.loom.new_preset_group": "New Preset Group",
 
   "creative_crafting_menus.config": "Creative Crafting Menus Config",
   "creative_crafting_menus.config.inventoryCraftingGrid": "Inventory Crafting Grid",

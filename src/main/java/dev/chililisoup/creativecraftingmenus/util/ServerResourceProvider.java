@@ -13,6 +13,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.*;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
@@ -86,6 +87,18 @@ public class ServerResourceProvider {
                         .lookupOrThrow(key)
                         .listElements()
                         .toList();
+    }
+
+    public static<T> Holder.@Nullable Reference<@NotNull T> getRegistryElement(
+            ResourceKey<@NotNull Registry<@NotNull T>> key,
+            Identifier id
+    ) {
+        @Nullable RegistryAccess registryAccess = registryAccess();
+        return registryAccess == null ?
+                null :
+                registryAccess
+                        .lookupOrThrow(key)
+                        .get(id).orElse(null);
     }
 
     public static List<Item> getFromPredicate(Predicate<Holder.Reference<@NotNull Item>> predicate) {

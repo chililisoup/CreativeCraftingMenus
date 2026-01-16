@@ -2,6 +2,7 @@ package dev.chililisoup.creativecraftingmenus.gui;
 
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
+import dev.chililisoup.creativecraftingmenus.config.BannerPresets;
 import dev.chililisoup.creativecraftingmenus.config.ModConfig;
 import dev.chililisoup.creativecraftingmenus.util.MenuHelper;
 import dev.chililisoup.creativecraftingmenus.util.ServerResourceProvider;
@@ -30,22 +31,21 @@ import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static net.minecraft.client.gui.screens.inventory.LoomScreen.*;
 
 public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMenuTab> {
-    protected static final Identifier SELECTED_LAYER = CreativeCraftingMenus.id("container/layer_selected");
-    protected static final Identifier HIGHLIGHTED_LAYER = CreativeCraftingMenus.id("container/layer_highlighted");
-    protected static final Identifier UNSELECTED_LAYER = CreativeCraftingMenus.id("container/layer_unselected");
-    protected static final Identifier ARROW_UP = CreativeCraftingMenus.id("container/arrow_up");
-    protected static final Identifier ARROW_UP_HIGHLIGHTED = CreativeCraftingMenus.id("container/arrow_up_highlighted");
-    protected static final Identifier ARROW_DOWN = CreativeCraftingMenus.id("container/arrow_down");
-    protected static final Identifier ARROW_DOWN_HIGHLIGHTED = CreativeCraftingMenus.id("container/arrow_down_highlighted");
+    protected static final Identifier ADD_GROUP_BUTTON = CreativeCraftingMenus.id("widget/add_group_button");
+    protected static final Identifier ADD_GROUP_BUTTON_HIGHLIGHTED = CreativeCraftingMenus.id("widget/add_group_button_highlighted");
+    protected static final Identifier LAYERS_ICON = CreativeCraftingMenus.id("icon/layers_icon");
 
     private static final DyeColor[] COLORS = {
             DyeColor.WHITE, DyeColor.LIGHT_GRAY, DyeColor.GRAY,    DyeColor.BLACK,
@@ -58,11 +58,13 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
     private Page.RenderFunction pageRenderer = Page.RenderFunction.EMPTY;
     private Page selectedPage = Page.PATTERN;
     private int selectedLayer = -1;
+    private @Nullable String selectedPresetGroup = null;
     private int cachedLayerSize = 0;
     private float scrollOffs;
     private boolean scrolling;
     private int startIndex;
     private BannerFlagModel flag;
+    private BannerFlagModel smallFlag;
 
     public LoomMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
         super(LoomTabMenu::new, displayName, iconGenerator);
@@ -73,10 +75,21 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         this.scrolling = false;
 
         ModelPart modelPart = Minecraft.getInstance().getEntityModels().bakeLayer(ModelLayers.STANDING_BANNER_FLAG);
+        ModelPart flagPart = modelPart.getChild("flag");
         this.flag = new BannerFlagModel(modelPart);
+        this.smallFlag = new BannerFlagModel(modelPart) {
+            @Override
+            public void setupAnim(@NotNull Float value) {
+                super.setupAnim(value);
+                flagPart.offsetScale(new Vector3f(-0.55F, -0.525F, 0F));
+                flagPart.y += 21F;
+            }
+        };
 
         if (patterns.isEmpty())
             patterns.addAll(ServerResourceProvider.getRegistryElements(Registries.BANNER_PATTERN));
+
+        BannerPresets.load();
 
         if (this.pageRenderer == Page.RenderFunction.EMPTY)
             this.pageRenderer = this.selectedPage.rendererSupplier.apply(this);
@@ -125,23 +138,29 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
                     16,
                     18
             );
-            guiGraphics.renderItem(page.icon, x, y + 1);
+
+            guiGraphics.pose().pushMatrix();
+            guiGraphics.pose().translate(x, y + 1);
+            page.iconRenderer.accept(guiGraphics);
+            guiGraphics.pose().popMatrix();
         }
 
         this.renderScrollBar(screen, guiGraphics, mouseX, mouseY);
         this.renderButtons(screen, guiGraphics, mouseX, mouseY);
-        this.renderDyes(screen, guiGraphics, mouseX, mouseY);
         this.renderPageContents(screen, guiGraphics, mouseX, mouseY);
+
+        if (this.selectedPage != Page.PRESETS) this.renderDyes(screen, guiGraphics, mouseX, mouseY);
+        else this.renderSecondaryPresetsPageContents(screen, guiGraphics, mouseX, mouseY);
     }
 
     private void renderBannerOnButton(GuiGraphics guiGraphics, int x, int y, TextureAtlasSprite textureAtlasSprite) {
         guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(x + 4, y + 2);
         float u0 = textureAtlasSprite.getU0();
-        float u1 = u0 + (textureAtlasSprite.getU1() - textureAtlasSprite.getU0()) * 21.0F / 64.0F;
+        float u1 = u0 + (textureAtlasSprite.getU1() - textureAtlasSprite.getU0()) * 21F / 64F;
         float size = textureAtlasSprite.getV1() - textureAtlasSprite.getV0();
-        float v0 = textureAtlasSprite.getV0() + size / 64.0F;
-        float v1 = v0 + size * 40.0F / 64.0F;
+        float v0 = textureAtlasSprite.getV0() + size / 64F;
+        float v1 = v0 + size * 40F / 64F;
         guiGraphics.fill(0, 0, 5, 10, DyeColor.GRAY.getTextureDiffuseColor());
         guiGraphics.blit(textureAtlasSprite.atlasLocation(), 0, 0, 5, 10, u0, u1, v0, v1);
         guiGraphics.pose().popMatrix();
@@ -159,7 +178,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
     private void renderScrollBar(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
         int x = screen.leftPos + 83;
-        int y = screen.topPos + 13 + (int) (41.0F * this.scrollOffs);
+        int y = screen.topPos + 13 + (int) (41F * this.scrollOffs);
 
         guiGraphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
@@ -178,6 +197,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         int left = screen.leftPos + 99;
         int top = screen.topPos + (ModConfig.HANDLER.instance().altLoomMenu ? 67 : 8);
 
+        boolean presetsPage = this.selectedPage == Page.PRESETS;
         for (int i = 0; i < 3; i++) {
             String name = switch (i) {
                 case 0 -> "add";
@@ -186,11 +206,19 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
             };
 
             int x = left + i * 20;
-            boolean hovered = mouseX >= x && mouseY >= top && mouseX < x + 18 && mouseY < top + 13;
+
+            boolean deletableGroup = presetsPage &&
+                    i == 2 && this.selectedPresetGroup != null &&
+                    BannerPresets.isGroupEmpty(this.selectedPresetGroup);
+
+            boolean disabled = presetsPage && ((i == 2 && !deletableGroup) || this.selectedPresetGroup == null);
+            boolean hovered = !disabled && mouseX >= x && mouseY >= top && mouseX < x + 18 && mouseY < top + 13;
             if (hovered) {
                 guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
                 guiGraphics.setTooltipForNextFrame(
-                        Component.translatable("container.creative_crafting_menus.loom." + name + "_button"),
+                        Component.translatable(
+                                "container.creative_crafting_menus.loom." + name + "_button" + (presetsPage ? ".presets" : "")
+                        ),
                         mouseX,
                         mouseY
                 );
@@ -198,7 +226,11 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
             guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    CreativeCraftingMenus.id(String.format("container/%s_button%s", name, hovered ? "_highlighted" : "")),
+                    CreativeCraftingMenus.id(String.format(
+                            "widget/%s_button%s",
+                            name,
+                            hovered ? "_highlighted" : (disabled ? "_disabled" : "")
+                    )),
                     x,
                     top,
                     18,
@@ -230,7 +262,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
             guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    selected ? SELECTED_DYE : (hovered ? HIGHLIGHTED_DYE : UNSELECTED_DYE),
+                    selected ? SELECTED_BUTTON : (hovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON),
                     x,
                     y,
                     14,
@@ -342,7 +374,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
                 guiGraphics.blitSprite(
                         RenderPipelines.GUI_TEXTURED,
-                        selected ? SELECTED_LAYER : (hovered ? HIGHLIGHTED_LAYER : UNSELECTED_LAYER),
+                        selected ? SELECTED_BUTTON : (hovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON),
                         left,
                         y,
                         56,
@@ -375,7 +407,142 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
     }
 
     private static Page.RenderFunction getPresetsPageRenderer(LoomMenuTab instance) {
-        return Page.RenderFunction.EMPTY;
+        if (instance.menu == null) return Page.RenderFunction.EMPTY;
+
+        if (instance.selectedPresetGroup == null) {
+            ArrayList<Map.@Nullable Entry<String, BannerPresets.PresetGroupItem>> groups =
+                    new ArrayList<>(BannerPresets.entries().stream().toList());
+            groups.add(null);
+            return (guiGraphics, left, top, mouseX, mouseY) -> {
+                for (int i = instance.startIndex; i < groups.size() && i < 4 + instance.startIndex; i++) {
+                    int y = top + (i - instance.startIndex) * 14;
+
+                    Map.@Nullable Entry<String, BannerPresets.PresetGroupItem> group = groups.get(i);
+                    Component label = group != null ?
+                            Component.literal(group.getKey()) :
+                            Component.translatable("container.creative_crafting_menus.loom.new_preset_group");
+
+                    boolean hovered = mouseX >= left && mouseY >= y && mouseX < left + 56 && mouseY < y + 14;
+                    if (hovered) {
+                        guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
+                        guiGraphics.setTooltipForNextFrame(label, mouseX, mouseY);
+                    }
+
+                    guiGraphics.blitSprite(
+                            RenderPipelines.GUI_TEXTURED,
+                            group != null ?
+                                    (hovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON) :
+                                    (hovered ? ADD_GROUP_BUTTON_HIGHLIGHTED : ADD_GROUP_BUTTON),
+                            left,
+                            y,
+                            56,
+                            14
+                    );
+
+                    if (group != null) guiGraphics.textRenderer().acceptScrolling(
+                            label,
+                            left + 3,
+                            left + 3,
+                            left + 53,
+                            y,
+                            y + 14
+                    );
+                }
+            };
+        }
+
+        return (guiGraphics, left, top, mouseX, mouseY) -> {
+            boolean hovered = mouseX >= left && mouseY >= top && mouseX < left + 7 && mouseY < top + 14;
+            if (hovered) {
+                guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
+                guiGraphics.setTooltipForNextFrame(Component.translatable("gui.back"), mouseX, mouseY);
+            }
+
+            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, SELECTED_BUTTON, left, top, 56, 14);
+
+            guiGraphics.blitSprite(
+                    RenderPipelines.GUI_TEXTURED,
+                    hovered ? ARROW_BACK_HIGHLIGHTED : ARROW_BACK,
+                    left + 1,
+                    top + 1,
+                    5,
+                    12
+            );
+
+            guiGraphics.textRenderer().acceptScrolling(
+                    Component.literal(instance.selectedPresetGroup),
+                    left + 8,
+                    left + 8,
+                    left + 53,
+                    top,
+                    top + 14
+            );
+
+            BannerPresets.PresetGroupItem group = BannerPresets.get(instance.selectedPresetGroup);
+            if (group == null) return;
+
+            for (int i = instance.startIndex; i < group.banners().size() && i < 10 + instance.startIndex; i++) {
+                int x = left + ((i - instance.startIndex) % 5) * 11;
+                int y = top + 14 + ((i - instance.startIndex) / 5) * 21;
+
+                BannerPresets.BannerPresetItem banner = group.banners().get(i);
+
+                boolean bannerHovered = !hovered && mouseX >= x && mouseY >= y && mouseX < x + 11 && mouseY < y + 21;
+                if (bannerHovered) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
+
+                guiGraphics.blitSprite(
+                        RenderPipelines.GUI_TEXTURED,
+                        bannerHovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON,
+                        x,
+                        y,
+                        11,
+                        21
+                );
+
+                guiGraphics.submitBannerPatternRenderState(
+                        instance.smallFlag, banner.color, banner.layers, (x + 1), (y + 1), (x + 10), (y + 20)
+                );
+            }
+        };
+    }
+
+    private void renderSecondaryPresetsPageContents(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (this.menu == null) return;
+
+        int left = screen.leftPos + 100;
+        int top = screen.topPos + (ModConfig.HANDLER.instance().altLoomMenu ? 9 : 21);
+
+        for (int i = 0; i < 4; i++) {
+            int y = top + i * 14;
+
+            boolean hovered = mouseX >= left && mouseY >= y && mouseX < left + 56 && mouseY < y + 14;
+            if (hovered) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
+
+            guiGraphics.blitSprite(
+                    RenderPipelines.GUI_TEXTURED,
+                    hovered ? HIGHLIGHTED_BUTTON : UNSELECTED_BUTTON,
+                    left,
+                    y,
+                    56,
+                    14
+            );
+
+            String label = switch (i) {
+                case 0 -> "Welcome Home";
+                case 1 -> "Live";
+                case 2 -> "Laugh";
+                default -> "Love";
+            };
+
+            guiGraphics.textRenderer().acceptScrolling(
+                    Component.literal(label),
+                    left + 3,
+                    left + 3,
+                    left + 53,
+                    y,
+                    y + 14
+            );
+        }
     }
 
     private static @Nullable Runnable checkPatternPageClicked(LoomMenuTab instance, int left, int top, double mouseX, double mouseY) {
@@ -439,6 +606,57 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
     }
 
     private static @Nullable Runnable checkPresetsPageClicked(LoomMenuTab instance, int left, int top, double mouseX, double mouseY) {
+        if (instance.menu == null) return null;
+
+        if (instance.selectedPresetGroup == null) {
+            ArrayList<Map.@Nullable Entry<String, BannerPresets.PresetGroupItem>> groups =
+                    new ArrayList<>(BannerPresets.entries().stream().toList());
+            groups.add(null);
+
+            for (int i = instance.startIndex; i < groups.size() && i < 4 + instance.startIndex; i++) {
+                int y = top + (i - instance.startIndex) * 14;
+                var group = groups.get(i);
+
+                if (mouseX >= left && mouseY >= y && mouseX < left + 56 && mouseY < y + 14)
+                    return () -> {
+                        if (group != null) instance.selectedPresetGroup = group.getKey();
+                        else {
+                            String name = "New Group";
+                            int num = 1;
+                            while (BannerPresets.has(name))
+                                name = "New Group (" + num++ + ")";
+
+                            BannerPresets.createGroup(name);
+                            instance.selectedPresetGroup = name;
+                        }
+                        instance.scrollOffs = 0F;
+                        instance.update();
+                    };
+            }
+        } else {
+            if (mouseX >= left && mouseY >= top && mouseX < left + 7 && mouseY < top + 14)
+                return () -> {
+                    instance.selectedPresetGroup = null;
+                    instance.scrollOffs = 0F;
+                    instance.update();
+                };
+
+            BannerPresets.PresetGroupItem group = BannerPresets.get(instance.selectedPresetGroup);
+            if (group == null) return null;
+
+            for (int i = instance.startIndex; i < group.banners().size() && i < 10 + instance.startIndex; i++) {
+                int x = left + ((i - instance.startIndex) % 5) * 11;
+                int y = top + 14 + ((i - instance.startIndex) / 5) * 21;
+
+                BannerPresets.BannerPresetItem banner = group.banners().get(i);
+                if (mouseX >= x && mouseY >= y && mouseX < x + 11 && mouseY < y + 21)
+                    return () -> {
+                        instance.menu.resultSlots.setItem(0, banner.item());
+                        instance.update();
+                    };
+            }
+        }
+
         return null;
     }
 
@@ -448,7 +666,11 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         int left = screen.leftPos + 99;
         int top = screen.topPos + (ModConfig.HANDLER.instance().altLoomMenu ? 67 : 8);
 
+        boolean presetsPage = this.selectedPage == Page.PRESETS;
+        if (presetsPage && this.selectedPresetGroup == null) return -1;
         for (int i = 0; i < 3; i++) {
+            boolean deletableGroup = presetsPage && i == 2 && BannerPresets.isGroupEmpty(this.selectedPresetGroup);
+            if (presetsPage && i == 2 && !deletableGroup) continue;
             int x = left + i * 20;
             if (mouseX >= x && mouseY >= top && mouseX < x + 18 && mouseY < top + 13)
                 return i;
@@ -458,7 +680,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
     }
 
     private @Nullable DyeColor checkDyeClicked(double mouseX, double mouseY) {
-        if (this.screen == null || this.menu == null) return null;
+        if (this.screen == null || this.menu == null || this.selectedPage == Page.PRESETS) return null;
 
         DyeColor dyeColor = this.menu.getColors().get(this.selectedLayer + 1);
         int left = this.screen.leftPos + 100;
@@ -523,10 +745,29 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
         int button = checkButtonClicked(mouseButtonEvent.x(), mouseButtonEvent.y());
         if (button >= 0) {
-            switch (button) {
+            if (this.selectedPage != Page.PRESETS) switch (button) {
                 case 0 -> this.menu.addLayer(this.patterns.get(1));
                 case 1 -> this.menu.removeLayer(this.selectedLayer);
                 default -> this.menu.resetBanner();
+            } else if (this.selectedPresetGroup != null) {
+                BannerPresets.PresetGroupItem group = BannerPresets.get(this.selectedPresetGroup);
+                if (group != null) {
+                    BannerPresets.BannerPresetItem banner = BannerPresets.BannerPresetItem.of(this.menu.resultSlots.getItem(0));
+                    if (button == 0) {
+                        if (group.addBanner(banner))
+                            BannerPresets.save();
+                    } else if (button == 1) {
+                        if (group.removeBanner(banner))
+                            BannerPresets.save();
+                    } else {
+                        if (BannerPresets.deleteGroup(this.selectedPresetGroup)) {
+                            BannerPresets.save();
+                            this.selectedPresetGroup = null;
+                            this.scrollOffs = 0F;
+                            this.update();
+                        }
+                    }
+                }
             }
             return true;
         }
@@ -535,7 +776,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         if (page != null) {
             this.selectedPage = page;
             this.pageRenderer = this.selectedPage.rendererSupplier.apply(this);
-            this.scrollOffs = 0.0F;
+            this.scrollOffs = 0F;
             this.startIndex = 0;
             return true;
         }
@@ -570,9 +811,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
         int top = this.screen.topPos + 13;
         int bottom = top + 56;
-        this.scrollOffs = ((float) mouseButtonEvent.y() - top - 7.5F) / (bottom - top - 15.0F);
-        this.scrollOffs = Mth.clamp(this.scrollOffs, 0.0F, 1.0F);
-        this.startIndex = (int) (this.scrollOffs * this.getOffscreenRows() + 0.5) * this.selectedPage.columns;
+        this.scrollOffs = ((float) mouseButtonEvent.y() - top - 7.5F) / (bottom - top - 15F);
+        this.scrollOffs = Mth.clamp(this.scrollOffs, 0F, 1F);
+        this.startIndex = (int) (this.scrollOffs * this.getOffscreenRows() + 0.5) * this.selectedPage.getColumns.apply(this);
         return true;
     }
 
@@ -581,8 +822,8 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         if (this.isScrollBarActive()) {
             int offscreenRows = this.getOffscreenRows();
             float deltaY = (float) distance / offscreenRows;
-            this.scrollOffs = Mth.clamp(this.scrollOffs - deltaY, 0.0F, 1.0F);
-            this.startIndex = (int) (this.scrollOffs * offscreenRows + 0.5) * this.selectedPage.columns;
+            this.scrollOffs = Mth.clamp(this.scrollOffs - deltaY, 0F, 1F);
+            this.startIndex = (int) (this.scrollOffs * offscreenRows + 0.5) * this.selectedPage.getColumns.apply(this);
         }
 
         return true;
@@ -593,8 +834,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         this.selectedPage = Page.PATTERN;
         this.pageRenderer = Page.RenderFunction.EMPTY;
         this.selectedLayer = -1;
+        this.selectedPresetGroup = null;
         this.cachedLayerSize = 0;
-        this.scrollOffs = 0.0F;
+        this.scrollOffs = 0F;
         this.startIndex = 0;
         super.remove();
     }
@@ -602,11 +844,13 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
     @Override
     public void dispose() {
         this.patterns.clear();
+        BannerPresets.unload();
         this.selectedPage = Page.PATTERN;
         this.pageRenderer = Page.RenderFunction.EMPTY;
         this.selectedLayer = -1;
+        this.selectedPresetGroup = null;
         this.cachedLayerSize = 0;
-        this.scrollOffs = 0.0F;
+        this.scrollOffs = 0F;
         this.startIndex = 0;
         super.dispose();
     }
@@ -622,57 +866,65 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
             this.cachedLayerSize = layers.size();
         }
 
-        this.startIndex = (int) (this.scrollOffs * this.getOffscreenRows() + 0.5) * this.selectedPage.columns;
+        this.startIndex = (int) (this.scrollOffs * this.getOffscreenRows() + 0.5) * this.selectedPage.getColumns.apply(this);
         this.pageRenderer = this.selectedPage.rendererSupplier.apply(this);
     }
 
     private enum Page {
         PATTERN(
                 Component.translatable("container.creative_crafting_menus.loom.pattern"),
-                Items.CREEPER_BANNER_PATTERN.getDefaultInstance(),
+                guiGraphics -> guiGraphics.renderItem(Items.CREEPER_BANNER_PATTERN.getDefaultInstance(), 0, 0),
                 LoomMenuTab::getPatternPageRenderer,
                 LoomMenuTab::checkPatternPageClicked,
                 menuTab -> (menuTab.patterns.size() - 13) / 4,
-                4
+                menuTab -> 4
         ),
         LAYERS(
                 Component.translatable("container.creative_crafting_menus.loom.layers"),
-                Items.BOOK.getDefaultInstance(),
+                guiGraphics -> guiGraphics.blitSprite(
+                        RenderPipelines.GUI_TEXTURED, LAYERS_ICON, 0, 0, 16, 16
+                ),
                 LoomMenuTab::getLayersPageRenderer,
                 LoomMenuTab::checkLayersPageClicked,
                 menuTab -> menuTab.menu != null ? menuTab.menu.getLayers().size() - 3 : 0,
-                1
+                menuTab -> 1
         ),
         PRESETS(
                 Component.translatable("container.creative_crafting_menus.loom.presets"),
-                Items.WHITE_BANNER.getDefaultInstance(),
+                guiGraphics -> guiGraphics.renderItem(Items.WHITE_BANNER.getDefaultInstance(), 0, 0),
                 LoomMenuTab::getPresetsPageRenderer,
                 LoomMenuTab::checkPresetsPageClicked,
-                menuTab -> (menuTab.patterns.size() - 5) / 4,
-                4
+                menuTab -> {
+                    if (menuTab.selectedPresetGroup == null)
+                        return BannerPresets.size() - 3;
+
+                    BannerPresets.PresetGroupItem group = BannerPresets.get(menuTab.selectedPresetGroup);
+                    return ((group != null ? group.banners().size() : 0) - 6) / 5;
+                },
+                menuTab -> menuTab.selectedPresetGroup != null ? 5 : 1
         );
 
         private final Component tooltip;
-        private final ItemStack icon;
+        private final Consumer<GuiGraphics> iconRenderer;
         private final Function<LoomMenuTab, RenderFunction> rendererSupplier;
         private final ClickChecker clickChecker;
         private final Function<LoomMenuTab, Integer> getOffscreenRows;
-        private final int columns;
+        private final Function<LoomMenuTab, Integer> getColumns;
 
         Page(
                 final Component tooltip,
-                final ItemStack icon,
+                final Consumer<GuiGraphics> iconRenderer,
                 final Function<LoomMenuTab, RenderFunction> rendererSupplier,
                 final ClickChecker clickChecker,
                 final Function<LoomMenuTab, Integer> getOffscreenRows,
-                final int columns
+                final Function<LoomMenuTab, Integer> getColumns
                 ) {
             this.tooltip = tooltip;
-            this.icon = icon;
+            this.iconRenderer = iconRenderer;
             this.clickChecker = clickChecker;
             this.rendererSupplier = rendererSupplier;
             this.getOffscreenRows = getOffscreenRows;
-            this.columns = columns;
+            this.getColumns = getColumns;
         }
 
         private interface RenderFunction {
