@@ -1070,6 +1070,8 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
             this.addSlot(new Slot(this.resultSlots, 0, 168, 57) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack itemStack) {
+                    if (itemStack.getItem() instanceof BannerItem)
+                        this.container.setItem(0, itemStack.copyWithCount(1));
                     return false;
                 }
 
