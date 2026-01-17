@@ -70,15 +70,15 @@ public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTab
             return resultStack;
         }
 
-        private static void slotChangedCraftingGrid(
-                Player player,
-                CraftingContainer craftingContainer,
-                ResultContainer resultContainer,
-                RecipeManager recipeManager,
-                HolderLookup.Provider provider
-        ) {
-            Level level = player.level();
-            CraftingInput craftingInput = craftingContainer.asCraftInput();
+        @Override
+        public void slotsChanged(@NotNull Container container) {
+            RecipeManager recipeManager = ServerResourceProvider.getRecipeManager();
+            if (recipeManager == null) return;
+            HolderLookup.Provider provider = ServerResourceProvider.registryAccess();
+            if (provider == null) return;
+
+            Level level = this.player.level();
+            CraftingInput craftingInput = this.craftSlots.asCraftInput();
             ItemStack itemStack = ItemStack.EMPTY;
             Optional<RecipeHolder<@NotNull CraftingRecipe>> optional = recipeManager
                     .getRecipeFor(RecipeType.CRAFTING, craftingInput, level, (ResourceKey<@NotNull Recipe<?>>) null);
@@ -86,18 +86,11 @@ public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTab
             if (optional.isPresent()) {
                 RecipeHolder<@NotNull CraftingRecipe> recipeHolder2 = optional.get();
                 CraftingRecipe craftingRecipe = recipeHolder2.value();
-                resultContainer.setRecipeUsed(recipeHolder2);
+                this.resultSlots.setRecipeUsed(recipeHolder2);
                 itemStack = craftingRecipe.assemble(craftingInput, provider);
             }
 
-            resultContainer.setItem(0, itemStack);
-        }
-
-        @Override
-        public void slotsChanged(@NotNull Container container) {
-            ServerResourceProvider.tryProcessRecipes((recipeManager, provider) ->
-                    slotChangedCraftingGrid(this.player, this.craftSlots, this.resultSlots, recipeManager, provider)
-            );
+            this.resultSlots.setItem(0, itemStack);
         }
 
         @Override

@@ -371,6 +371,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         return null;
     }
 
+    @Override
     public boolean mouseClicked(MouseButtonEvent mouseButtonEvent) {
         if (this.screen == null) return false;
 
@@ -383,6 +384,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         return checkPageContentsClicked(mouseButtonEvent.x(), mouseButtonEvent.y()) != null;
     }
 
+    @Override
     public boolean mouseReleased(MouseButtonEvent mouseButtonEvent) {
         this.scrolling = false;
 

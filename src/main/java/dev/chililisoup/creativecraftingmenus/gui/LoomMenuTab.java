@@ -805,6 +805,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         return null;
     }
 
+    @Override
     public boolean mouseClicked(MouseButtonEvent mouseButtonEvent) {
         if (this.screen == null) return false;
 
@@ -823,6 +824,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         return checkPageContentsClicked(mouseButtonEvent.x(), mouseButtonEvent.y()) != null;
     }
 
+    @Override
     public boolean mouseReleased(MouseButtonEvent mouseButtonEvent) {
         this.scrolling = false;
         if (this.menu == null) return false;

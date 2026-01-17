@@ -5,55 +5,38 @@ import net.fabricmc.fabric.impl.resource.pack.ModPackResourcesUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.server.IntegratedServer;
-import net.minecraft.commands.Commands;
-import net.minecraft.core.Holder;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.Registry;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.*;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.*;
-import net.minecraft.server.permissions.LevelBasedPermissionSet;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.PackRepository;
+import net.minecraft.server.packs.resources.*;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Unit;
 import net.minecraft.util.Util;
-import net.minecraft.world.Difficulty;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.WorldDataConfiguration;
-import net.minecraft.world.level.gamerules.GameRules;
-import net.minecraft.world.level.levelgen.WorldDimensions;
-import net.minecraft.world.level.levelgen.WorldOptions;
-import net.minecraft.world.level.levelgen.presets.WorldPresets;
-import net.minecraft.world.level.storage.PrimaryLevelData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 public class ServerResourceProvider {
-    private static @Nullable ReloadableServerResources RESOURCES;
-    private static boolean RESOURCE_LOAD_ATTEMPTED;
+    private static final CompletableFuture<Unit> DATA_RELOAD_INITIAL_TASK = CompletableFuture.completedFuture(Unit.INSTANCE);
+    private static @Nullable RecipeManager RECIPE_MANAGER;
+    private static boolean RECIPE_LOAD_ATTEMPTED;
 
-    public static void tryProcessRecipes(BiConsumer<RecipeManager, HolderLookup.Provider> process) {
+    public static @Nullable RecipeManager getRecipeManager() {
         @Nullable IntegratedServer singleplayerServer = Minecraft.getInstance().getSingleplayerServer();
-        if (singleplayerServer != null) {
-            process.accept(singleplayerServer.getRecipeManager(), singleplayerServer.registryAccess());
-            return;
-        }
-
-        @Nullable ReloadableServerResources resources = resources();
-        if (resources != null)
-            process.accept(resources.getRecipeManager(), resources.fullRegistries().lookup());
+        if (singleplayerServer != null) return singleplayerServer.getRecipeManager();
+        return getVanillaRecipeManager();
     }
 
     public static<T> List<T> getFromRegistry(ResourceKey<@NotNull Registry<@NotNull T>> key) {
@@ -114,60 +97,48 @@ public class ServerResourceProvider {
         return List.of();
     }
 
-    private static @Nullable RegistryAccess registryAccess() {
+    public static @Nullable RegistryAccess registryAccess() {
         @Nullable ClientPacketListener connection = Minecraft.getInstance().getConnection();
         return connection == null ? null : connection.registryAccess();
     }
 
-    private static @Nullable ReloadableServerResources resources() {
-        if (RESOURCES != null) return RESOURCES;
-        if (RESOURCE_LOAD_ATTEMPTED) return null;
+    private static @Nullable RecipeManager getVanillaRecipeManager() {
+        if (RECIPE_MANAGER != null) return RECIPE_MANAGER;
+        if (RECIPE_LOAD_ATTEMPTED) return null;
 
-        RESOURCE_LOAD_ATTEMPTED = true;
-        try { RESOURCES = createServerResources(); }
-        catch (Exception e) { CreativeCraftingMenus.LOGGER.error("Unable to load recipes!"); }
+        RECIPE_LOAD_ATTEMPTED = true;
+        try { RECIPE_MANAGER = createVanillaRecipeManager(); }
+        catch (Exception e) { CreativeCraftingMenus.LOGGER.error("Unable to load recipes!", e); }
 
-        return RESOURCES;
+        return RECIPE_MANAGER;
     }
 
-    private static ReloadableServerResources createServerResources() throws ExecutionException, InterruptedException {
-        CompletableFuture<WorldStem> completableFuture = WorldLoader.load(
-                new WorldLoader.InitConfig(
-                        new WorldLoader.PackConfig(
-                                ModPackResourcesUtil.createClientManager(),
-                                WorldDataConfiguration.DEFAULT,
-                                false,
-                                false
-                        ),
-                        Commands.CommandSelection.INTEGRATED,
-                        LevelBasedPermissionSet.GAMEMASTER
-                ),
-                dataLoadContext -> {
-                    WorldDimensions.Complete complete = WorldPresets.createNormalWorldDimensions(dataLoadContext.datapackWorldgen())
-                            .bake(dataLoadContext.datapackDimensions().lookupOrThrow(Registries.LEVEL_STEM));
-                    return new WorldLoader.DataLoadOutput<>(
-                            new PrimaryLevelData(
-                                    new LevelSettings(
-                                            "test",
-                                            GameType.CREATIVE,
-                                            false,
-                                            Difficulty.HARD,
-                                            true,
-                                            new GameRules(WorldDataConfiguration.DEFAULT.enabledFeatures()),
-                                            WorldDataConfiguration.DEFAULT
-                                    ),
-                                    WorldOptions.defaultWithRandomSeed(),
-                                    complete.specialWorldProperty(),
-                                    complete.lifecycle()
-                            ),
-                            complete.dimensionsRegistryAccess()
-                    );
-                },
-                WorldStem::new,
-                Util.backgroundExecutor(),
-                Minecraft.getInstance()
+    private static RecipeManager createVanillaRecipeManager() {
+        PackRepository packRepository = ModPackResourcesUtil.createClientManager();
+        MinecraftServer.configurePackRepository(
+                packRepository, WorldDataConfiguration.DEFAULT, false, false
         );
-        Minecraft.getInstance().managedBlock(completableFuture::isDone);
-        return completableFuture.get().dataPackResources();
+        CloseableResourceManager closeableResourceManager = new MultiPackResourceManager(
+                PackType.SERVER_DATA,
+                packRepository.openAllSelected()
+        );
+
+        RecipeManager recipeManager = new RecipeManager(Objects.requireNonNull(registryAccess()));
+
+        Minecraft.getInstance().managedBlock(
+                ProfiledReloadInstance.of(
+                        closeableResourceManager,
+                        List.of(recipeManager),
+                        Util.backgroundExecutor(),
+                        Minecraft.getInstance(),
+                        DATA_RELOAD_INITIAL_TASK
+                )
+                .done()
+                .whenComplete((object, throwable) -> {
+                    if (throwable != null) closeableResourceManager.close();
+                })::isDone
+        );
+
+        return recipeManager;
     }
 }
