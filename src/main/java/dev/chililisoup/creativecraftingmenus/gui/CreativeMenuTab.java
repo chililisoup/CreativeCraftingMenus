@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
-public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<T>, T extends CreativeMenuTab<M, T>> extends CreativeModeTab {
+public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<M>> extends CreativeModeTab {
     protected static final Identifier SELECTED_TAB = CreativeCraftingMenus.id("widget/inner_tab_selected");
     protected static final Identifier HIGHLIGHTED_TAB = CreativeCraftingMenus.id("widget/inner_tab_highlighted");
     protected static final Identifier UNSELECTED_TAB = CreativeCraftingMenus.id("widget/inner_tab_unselected");
@@ -32,25 +32,23 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
     protected static final Identifier ARROW_BACK = CreativeCraftingMenus.id("widget/arrow_back");
     protected static final Identifier ARROW_BACK_HIGHLIGHTED = CreativeCraftingMenus.id("widget/arrow_back_highlighted");
 
-    private final TabMenuConstructor<M, T> menuConstructor;
     protected @Nullable AbstractContainerScreen<?> screen;
     protected @Nullable M menu = null;
     private boolean hidden = false;
 
-    CreativeMenuTab(TabMenuConstructor<M, T> menuConstructor, Component displayName, Supplier<ItemStack> iconGenerator) {
+    CreativeMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
         //noinspection DataFlowIssue
         super(null, -1, Type.INVENTORY, displayName, iconGenerator, CreativeModeTab.Builder.EMPTY_GENERATOR);
-        this.menuConstructor = menuConstructor;
     }
+
+    abstract M createMenu(Player player);
 
     public final void init(AbstractContainerScreen<?> screen, Player player) {
         this.screen = screen;
         if (this.menu == null)
-            //noinspection unchecked
-            this.menu = this.menuConstructor.accept((T) this, player);
+            this.menu = this.createMenu(player);
         else if (this.menu.player != player)
-            //noinspection unchecked
-            this.menu = (M) this.menu.copyWithPlayer(player);
+            this.menu = this.menu.copyWithPlayer(player);
     }
 
     public void subInit() {}
@@ -116,23 +114,17 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
 
     public void render(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {}
 
-    public interface TabMenuConstructor<M extends CreativeTabMenu<T>, T extends CreativeMenuTab<M, T>> {
-        M accept(T menuTab, Player player);
-    }
-
-    public static abstract class CreativeTabMenu<T extends CreativeMenuTab<?, T>> extends AbstractContainerMenu {
-        protected final T menuTab;
+    public static abstract class CreativeTabMenu<M extends CreativeTabMenu<M>> extends AbstractContainerMenu {
         protected final Player player;
 
-        CreativeTabMenu(T menuTab, Player player) {
+        CreativeTabMenu(Player player) {
             super(null, 0);
-            this.menuTab = menuTab;
             this.player = player;
         }
 
-        abstract CreativeTabMenu<T> copyWithPlayer(@NotNull Player player);
+        abstract M copyWithPlayer(@NotNull Player player);
 
-        protected <M extends CreativeTabMenu<T>> M copyContentsTo(M other) {
+        protected M copyContentsTo(M other) {
             other.initializeContents(
                     this.getStateId(),
                     this.slots.stream().map(Slot::getItem).toList(),
@@ -192,38 +184,38 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
         public void removed(@NotNull Player player) {}
     }
     
-    public interface MenuTabConstructor<T extends CreativeMenuTab<?, T>> {
+    public interface MenuTabConstructor<M extends CreativeMenuTab.CreativeTabMenu<M>, T extends CreativeMenuTab<M>> {
         T accept(
                 Component component,
                 Supplier<ItemStack> supplier
         );
     }
 
-    public static class Builder<T extends CreativeMenuTab<?, T>> extends CreativeModeTab.Builder {
-        MenuTabConstructor<T> constructor;
+    public static class Builder<M extends CreativeMenuTab.CreativeTabMenu<M>, T extends CreativeMenuTab<M>> extends CreativeModeTab.Builder {
+        MenuTabConstructor<M, T> constructor;
         private boolean hasDisplayName = false;
 
-        public Builder(MenuTabConstructor<T> constructor) {
+        public Builder(MenuTabConstructor<M, T> constructor) {
             //noinspection DataFlowIssue
             super(null, -1);
             this.constructor = constructor;
         }
 
         @Override
-        public @NotNull Builder<T> title(@NotNull Component displayName) {
+        public @NotNull Builder<M, T> title(@NotNull Component displayName) {
             hasDisplayName = true;
             super.title(displayName);
             return this;
         }
 
         @Override
-        public @NotNull Builder<T> icon(@NotNull Supplier<ItemStack> iconGenerator) {
+        public @NotNull Builder<M, T> icon(@NotNull Supplier<ItemStack> iconGenerator) {
             super.icon(iconGenerator);
             return this;
         }
 
         @Override
-        public @NotNull Builder<T> backgroundTexture(@NotNull Identifier backgroundTexture) {
+        public @NotNull Builder<M, T> backgroundTexture(@NotNull Identifier backgroundTexture) {
             super.backgroundTexture(backgroundTexture);
             return this;
         }

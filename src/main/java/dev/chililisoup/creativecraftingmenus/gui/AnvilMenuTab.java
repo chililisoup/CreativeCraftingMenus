@@ -20,11 +20,16 @@ import java.util.function.Supplier;
 
 import static net.minecraft.client.gui.screens.inventory.AnvilScreen.*;
 
-public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu, AnvilMenuTab> {
+public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
     private @Nullable EditBox name;
 
     public AnvilMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
-        super(AnvilTabMenu::new, displayName, iconGenerator);
+        super(displayName, iconGenerator);
+    }
+
+    @Override
+    AnvilTabMenu createMenu(Player player) {
+        return new AnvilTabMenu(player);
     }
 
     @Override
@@ -120,18 +125,18 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu, Anv
         }
     }
 
-    public static class AnvilTabMenu extends CreativeTabMenu<AnvilMenuTab> {
+    public class AnvilTabMenu extends CreativeTabMenu<AnvilTabMenu> {
         private final Container inputSlots;
         private final ResultContainer resultSlots = new ResultContainer();
 
-        AnvilTabMenu(AnvilMenuTab menuTab, Player player) {
-            super(menuTab, player);
+        AnvilTabMenu(Player player) {
+            super(player);
             this.inputSlots = MenuHelper.simpleContainer(this, 2);
             this.addSlot(new Slot(this.inputSlots, 0, 36, 47) {
                 @Override
                 public void setChanged() {
                     super.setChanged();
-                    menuTab.firstSlotChanged(this.getItem());
+                    AnvilMenuTab.this.firstSlotChanged(this.getItem());
                 }
             });
             this.addSlot(new Slot(this.inputSlots, 1, 85, 47));
@@ -140,7 +145,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu, Anv
 
         @Override
         AnvilTabMenu copyWithPlayer(@NotNull Player player) {
-            return this.copyContentsTo(new AnvilTabMenu(this.menuTab, player));
+            return this.copyContentsTo(new AnvilTabMenu(player));
         }
 
         @Override
@@ -170,7 +175,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu, Anv
                 this.resultSlots.setItem(0, this.inputSlots.getItem(0).copy());
             else if (container == this.resultSlots) {
                 this.inputSlots.clearContent();
-                this.menuTab.firstSlotChanged(ItemStack.EMPTY);
+                AnvilMenuTab.this.firstSlotChanged(ItemStack.EMPTY);
             }
         }
 

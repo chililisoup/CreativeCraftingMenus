@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class CreativeMenuTabs {
-    public static final List<CreativeMenuTab<?, ?>> MENU_TABS;
+    public static final List<CreativeMenuTab<?>> MENU_TABS;
 
     static {
         MENU_TABS = List.of(
@@ -46,8 +46,8 @@ public class CreativeMenuTabs {
         );
     }
 
-    private static<T extends CreativeMenuTab<?, T>> T register(
-            CreativeMenuTab.MenuTabConstructor<T> constructor,
+    private static<M extends CreativeMenuTab.CreativeTabMenu<M>, T extends CreativeMenuTab<M>> T register(
+            CreativeMenuTab.MenuTabConstructor<M, T> constructor,
             String name,
             String translationKey,
             Supplier<ItemStack> iconGenerator

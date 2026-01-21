@@ -44,7 +44,7 @@ import java.util.function.Supplier;
 
 import static net.minecraft.client.gui.screens.inventory.LoomScreen.*;
 
-public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMenuTab> {
+public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
     protected static final Identifier ADD_GROUP_BUTTON = CreativeCraftingMenus.id("widget/add_group_button");
     protected static final Identifier ADD_GROUP_BUTTON_HIGHLIGHTED = CreativeCraftingMenus.id("widget/add_group_button_highlighted");
     protected static final Identifier LAYERS_ICON = CreativeCraftingMenus.id("icon/layers_icon");
@@ -73,7 +73,12 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
     private @Nullable EditBox groupNameBox;
 
     public LoomMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
-        super(LoomTabMenu::new, displayName, iconGenerator);
+        super(displayName, iconGenerator);
+    }
+
+    @Override
+    LoomTabMenu createMenu(Player player) {
+        return new LoomTabMenu(player);
     }
 
     @Override
@@ -1060,11 +1065,11 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
         }
     }
 
-    public static class LoomTabMenu extends CreativeTabMenu<LoomMenuTab> {
+    public class LoomTabMenu extends CreativeTabMenu<LoomTabMenu> {
         private final ResultContainer resultSlots = new ResultContainer();
 
-        LoomTabMenu(LoomMenuTab menuTab, Player player) {
-            super(menuTab, player);
+        LoomTabMenu(Player player) {
+            super(player);
 
             LoomTabMenu self = this;
             this.addSlot(new Slot(this.resultSlots, 0, 168, 57) {
@@ -1087,7 +1092,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
         @Override
         LoomTabMenu copyWithPlayer(@NotNull Player player) {
-            return this.copyContentsTo(new LoomTabMenu(this.menuTab, player));
+            return this.copyContentsTo(new LoomTabMenu(player));
         }
 
         @Override
@@ -1099,7 +1104,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
             if (slotStack.getItem() instanceof BannerItem) {
                 this.resultSlots.setItem(0, slotStack.copyWithCount(1));
-                this.menuTab.update();
+                LoomMenuTab.this.update();
             }
 
             return ItemStack.EMPTY;
@@ -1120,7 +1125,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
                             this.getBannerItem().getColor() == DyeColor.WHITE ? DyeColor.BLACK : DyeColor.WHITE
                     ).build()
             );
-            this.menuTab.update();
+            LoomMenuTab.this.update();
         }
 
         private void removeLayer(int layer) {
@@ -1134,7 +1139,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
             layers.remove(layer);
 
             itemStack.set(DataComponents.BANNER_PATTERNS, new BannerPatternLayers(layers));
-            this.menuTab.update();
+            LoomMenuTab.this.update();
         }
 
         private void setPattern(Holder<@NotNull BannerPattern> pattern, int layer) {
@@ -1150,7 +1155,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
             updated.set(layer, new BannerPatternLayers.Layer(pattern, layers.get(layer).color()));
 
             itemStack.set(DataComponents.BANNER_PATTERNS, new BannerPatternLayers(updated));
-            this.menuTab.update();
+            LoomMenuTab.this.update();
         }
 
         private void setColor(DyeColor color, int layer) {
@@ -1162,7 +1167,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
                 swapped.applyComponents(itemStack.getComponentsPatch());
 
                 this.resultSlots.setItem(0, swapped);
-                this.menuTab.update();
+                LoomMenuTab.this.update();
                 return;
             }
 
@@ -1173,7 +1178,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
             updated.set(layer, new BannerPatternLayers.Layer(layers.get(layer).pattern(), color));
 
             itemStack.set(DataComponents.BANNER_PATTERNS, new BannerPatternLayers(updated));
-            this.menuTab.update();
+            LoomMenuTab.this.update();
         }
 
         private void moveLayer(int layer, int change) {
@@ -1192,12 +1197,12 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
             updated.set(layer + change, from);
 
             itemStack.set(DataComponents.BANNER_PATTERNS, new BannerPatternLayers(updated));
-            this.menuTab.update();
+            LoomMenuTab.this.update();
         }
 
         private void resetBanner() {
             this.resultSlots.setItem(0, Items.WHITE_BANNER.getDefaultInstance());
-            this.menuTab.update();
+            LoomMenuTab.this.update();
         }
 
         private List<BannerPatternLayers.Layer> getLayers() {
@@ -1217,7 +1222,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu, LoomMe
 
             BannerItem bannerItem = (BannerItem) Items.WHITE_BANNER;
             this.resultSlots.setItem(0, bannerItem.getDefaultInstance());
-            this.menuTab.update();
+            LoomMenuTab.this.update();
             return bannerItem;
         }
 

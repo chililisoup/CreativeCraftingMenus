@@ -52,7 +52,7 @@ import static net.minecraft.client.gui.screens.inventory.SmithingScreen.ARMOR_ST
 import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.SCROLLER_DISABLED_SPRITE;
 import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.SCROLLER_SPRITE;
 
-public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTabMenu, SmithingMenuTab> {
+public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTabMenu> {
     private static final Identifier PLACEHOLDER_TRIM = CreativeCraftingMenus.id("icon/placeholder_trim_smithing_template");
     private static final Set<TagKey<@NotNull Item>> MATERIAL_SWAP_TAGS = Set.of(
             ItemTags.SWORDS,
@@ -83,7 +83,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     private int startIndex;
 
     public SmithingMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
-        super(SmithingTabMenu::new, displayName, iconGenerator);
+        super(displayName, iconGenerator);
 
         this.armorStandPreview.entityType = EntityType.ARMOR_STAND;
         this.armorStandPreview.showBasePlate = false;
@@ -93,6 +93,11 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         this.armorStandPreview.elytraRotX = Mth.PI / 12.0F;
         this.armorStandPreview.elytraRotY = 0.0F;
         this.armorStandPreview.elytraRotZ = -this.armorStandPreview.elytraRotX;
+    }
+
+    @Override
+    SmithingTabMenu createMenu(Player player) {
+        return new SmithingTabMenu(player);
     }
 
     @Override
@@ -550,12 +555,12 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         private record PageItem(Component tooltip, RenderFunction iconRenderer, boolean selected) {}
     }
 
-    public static class SmithingTabMenu extends CreativeTabMenu<SmithingMenuTab> {
+    public class SmithingTabMenu extends CreativeTabMenu<SmithingTabMenu> {
         private final Container inputSlots;
         private final ResultContainer resultSlots = new ResultContainer();
 
-        SmithingTabMenu(SmithingMenuTab menuTab, Player player) {
-            super(menuTab, player);
+        SmithingTabMenu(Player player) {
+            super(player);
             this.inputSlots = MenuHelper.simpleContainer(this, 1);
             this.addSlot(new Slot(this.inputSlots, 0, 9, 16));
             this.addSlot(MenuHelper.resultSlot(this, this.resultSlots, 0, 9, 54));
@@ -563,7 +568,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
 
         @Override
         SmithingTabMenu copyWithPlayer(@NotNull Player player) {
-            return this.copyContentsTo(new SmithingTabMenu(this.menuTab, player));
+            return this.copyContentsTo(new SmithingTabMenu(player));
         }
 
         @Override
@@ -610,7 +615,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                 ).build());
             }
 
-            this.menuTab.updateItem(result);
+            SmithingMenuTab.this.updateItem(result);
         }
 
         private void setTrimMaterial(@Nullable Holder<@NotNull TrimMaterial> material) {
@@ -631,7 +636,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                 ).build());
             }
 
-            this.menuTab.updateItem(result);
+            SmithingMenuTab.this.updateItem(result);
         }
 
         private void swapBaseItem(Item base) {
@@ -642,7 +647,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
             swapped.applyComponents(result.getComponentsPatch());
 
             this.resultSlots.setItem(0, swapped);
-            this.menuTab.updateItem(swapped);
+            SmithingMenuTab.this.updateItem(swapped);
         }
 
         @Override
@@ -650,10 +655,10 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
             if (container == this.inputSlots) {
                 ItemStack result = this.inputSlots.getItem(0).copy();
                 this.resultSlots.setItem(0, result);
-                this.menuTab.updateItem(result);
+                SmithingMenuTab.this.updateItem(result);
             } else if (container == this.resultSlots) {
                 this.inputSlots.clearContent();
-                this.menuTab.updateItem(ItemStack.EMPTY);
+                SmithingMenuTab.this.updateItem(ItemStack.EMPTY);
             }
         }
 

@@ -15,9 +15,14 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTabMenu, CraftingMenuTab> {
+public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTabMenu> {
     public CraftingMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
-        super(CraftingTabMenu::new, displayName, iconGenerator);
+        super(displayName, iconGenerator);
+    }
+
+    @Override
+    CraftingTabMenu createMenu(Player player) {
+        return new CraftingTabMenu(player);
     }
 
     @Override
@@ -25,12 +30,12 @@ public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTab
         super.drawTitle(titleDrawer, x + 31, y, color);
     }
 
-    public static class CraftingTabMenu extends CreativeTabMenu<CraftingMenuTab> {
+    public static class CraftingTabMenu extends CreativeTabMenu<CraftingTabMenu> {
         private final CraftingContainer craftSlots;
         private final ResultContainer resultSlots = new ResultContainer();
 
-        CraftingTabMenu(CraftingMenuTab menuTab, Player player) {
-            super(menuTab, player);
+        CraftingTabMenu(Player player) {
+            super(player);
             this.craftSlots = new TransientCraftingContainer(this, 3, 3);
             this.addSlot(new ResultSlot(this.player, this.craftSlots, this.resultSlots, 0, 134, 35));
             this.addCraftingGridSlots();
@@ -46,7 +51,7 @@ public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTab
 
         @Override
         CraftingTabMenu copyWithPlayer(@NotNull Player player) {
-            return this.copyContentsTo(new CraftingTabMenu(this.menuTab, player));
+            return this.copyContentsTo(new CraftingTabMenu(player));
         }
 
         @Override

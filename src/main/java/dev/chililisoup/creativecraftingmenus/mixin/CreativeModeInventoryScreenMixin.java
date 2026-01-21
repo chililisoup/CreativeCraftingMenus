@@ -81,7 +81,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             ordinal = 0
     ))
     private void menuTabInit(CallbackInfo ci) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab)
+        if (selectedTab instanceof CreativeMenuTab<?> menuTab)
             menuTab.init(this, this.minecraft.player);
     }
 
@@ -91,22 +91,22 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             target = "Lnet/minecraft/world/inventory/InventoryMenu;removeSlotListener(Lnet/minecraft/world/inventory/ContainerListener;)V"
     ))
     private void menuTabSubInit(CallbackInfo ci) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab)
+        if (selectedTab instanceof CreativeMenuTab<?> menuTab)
             menuTab.subInit();
     }
 
     @Inject(method = "selectTab", at = @At("HEAD"))
     private void updateMenuTabs(CreativeModeTab tab, CallbackInfo ci) {
         if (selectedTab == tab) return;
-        if (selectedTab instanceof CreativeMenuTab<?, ?> oldTab)
+        if (selectedTab instanceof CreativeMenuTab<?> oldTab)
             oldTab.remove();
-        if (this.listener != null && tab instanceof CreativeMenuTab<?, ?> newTab)
+        if (this.listener != null && tab instanceof CreativeMenuTab<?> newTab)
             newTab.init(this, this.minecraft.player);
     }
 
     @Inject(method = "selectTab", at = @At("TAIL"))
     private void makeAdjustments(CreativeModeTab tab, CallbackInfo ci) {
-        if (tab instanceof CreativeMenuTab<?, ?> newTab && Minecraft.getInstance().screen == this) {
+        if (tab instanceof CreativeMenuTab<?> newTab && Minecraft.getInstance().screen == this) {
             this.imageHeight = 166;
             this.topPos = (this.height - this.imageHeight) / 2;
             if (this.listener != null) newTab.subInit();
@@ -160,7 +160,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)V"
     ))
     private void drawMenuTabLabels(GuiGraphics guiGraphics, Font font, Component title, int x, int y, int color, boolean bl, Operation<Void> original) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab) {
+        if (selectedTab instanceof CreativeMenuTab<?> menuTab) {
             menuTab.drawTitle(
                     (mX, mY, mColor) -> original.call(guiGraphics, font, title, mX, mY, mColor, bl),
                     x,
@@ -173,7 +173,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
 
     @Inject(method = "renderBg", at = @At("TAIL"))
     private void renderTabMenu(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY, CallbackInfo ci) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab)
+        if (selectedTab instanceof CreativeMenuTab<?> menuTab)
             menuTab.render(this, guiGraphics, partialTick, mouseX, mouseY);
     }
 
@@ -215,7 +215,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             Operation<Void> original,
             @Local(argsOnly = true) @Nullable Slot slot
     ) {
-        if (!(selectedTab instanceof CreativeMenuTab<?, ?> menuTab)) {
+        if (!(selectedTab instanceof CreativeMenuTab<?> menuTab)) {
             original.call(instance, slotIndex, mouseButton, clickType, player);
         } else if (clickType == ClickType.QUICK_MOVE && (mouseButton == 0 || mouseButton == 1) && slotIndex >= 0) {
             CreativeMenuTab.CreativeTabMenu<?> tabMenu = menuTab.getMenu();
@@ -249,7 +249,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             cancellable = true
     )
     private void menuTabKeyPressed(KeyEvent keyEvent, CallbackInfoReturnable<Boolean> cir) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab && menuTab.keyPressed(keyEvent))
+        if (selectedTab instanceof CreativeMenuTab<?> menuTab && menuTab.keyPressed(keyEvent))
             cir.setReturnValue(true);
     }
 
@@ -266,7 +266,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             cancellable = true
     )
     private static void menuTabMouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl, CallbackInfoReturnable<Boolean> cir) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab && menuTab.mouseClicked(mouseButtonEvent))
+        if (selectedTab instanceof CreativeMenuTab<?> menuTab && menuTab.mouseClicked(mouseButtonEvent))
             cir.setReturnValue(true);
     }
 
@@ -282,10 +282,10 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             @Local(ordinal = 0) double x,
             @Local(ordinal = 1) double y
     ) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab && menuTab.mouseReleased(mouseButtonEvent))
+        if (selectedTab instanceof CreativeMenuTab<?> menuTab && menuTab.mouseReleased(mouseButtonEvent))
             cir.setReturnValue(true);
 
-        for (CreativeMenuTab<?, ?> menuTab : CreativeMenuTabs.MENU_TABS) {
+        for (CreativeMenuTab<?> menuTab : CreativeMenuTabs.MENU_TABS) {
             if (this.checkTabClicked(menuTab, x, y)) {
                 this.selectTab(menuTab);
                 cir.setReturnValue(true);
@@ -301,7 +301,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             cancellable = true
     )
     private void menuTabDragged(MouseButtonEvent mouseButtonEvent, double a, double b, CallbackInfoReturnable<Boolean> cir) {
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab && menuTab.mouseDragged(mouseButtonEvent))
+        if (selectedTab instanceof CreativeMenuTab<?> menuTab && menuTab.mouseDragged(mouseButtonEvent))
             cir.setReturnValue(true);
     }
 
@@ -312,7 +312,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     )
     private boolean menuTabScrolled(CreativeModeInventoryScreen instance, double a, double b, double c, double distance, Operation<Boolean> original) {
         if (original.call(instance, a, b, c, distance)) return true;
-        return selectedTab instanceof CreativeMenuTab<?, ?> menuTab && menuTab.mouseScrolled(distance);
+        return selectedTab instanceof CreativeMenuTab<?> menuTab && menuTab.mouseScrolled(distance);
     }
 
     @WrapOperation(
@@ -346,7 +346,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     ))
     private boolean addMenuTabSlots(NonNullList<@NotNull Object> instance, Object o, Operation<Boolean> original) {
         boolean result = original.call(instance, o);
-        if (selectedTab instanceof CreativeMenuTab<?, ?> menuTab)
+        if (selectedTab instanceof CreativeMenuTab<?> menuTab)
             menuTab.getMenu().slots.forEach(slot -> {
                 CreativeModeInventoryScreen.SlotWrapper wrapped =
                         new CreativeModeInventoryScreen.SlotWrapper(slot, slot.index, slot.x, slot.y);
