@@ -7,11 +7,11 @@ import net.fabricmc.fabric.impl.client.itemgroup.FabricCreativeGuiComponents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-import java.util.List;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class CreativeMenuTabs {
@@ -22,7 +22,7 @@ public class CreativeMenuTabs {
                 register(
                         AnvilMenuTab::new,
                         "anvil_menu",
-                        "container.repair",
+                        "block.minecraft.anvil",
                         Items.ANVIL::getDefaultInstance
                 ),
                 register(
@@ -40,7 +40,7 @@ public class CreativeMenuTabs {
                 register(
                         SmithingMenuTab::new,
                         "smithing_menu",
-                        "container.upgrade",
+                        "block.minecraft.smithing_table",
                         Items.SMITHING_TABLE::getDefaultInstance
                 )
         );
@@ -52,22 +52,19 @@ public class CreativeMenuTabs {
             String translationKey,
             Supplier<ItemStack> iconGenerator
     ) {
+        Identifier id = CreativeCraftingMenus.id(name);
+
         T menuTab = new CreativeMenuTab.Builder<>(constructor)
                 .title(Component.translatable(translationKey))
                 .backgroundTexture(CreativeCraftingMenus.id(
                         String.format("textures/gui/container/creative_%s.png", name)
                 ))
                 .icon(iconGenerator)
+                .id(id.toString())
                 .build();
 
-        Registry.register(
-                BuiltInRegistries.CREATIVE_MODE_TAB,
-                ResourceKey.create(BuiltInRegistries.CREATIVE_MODE_TAB.key(), CreativeCraftingMenus.id(name)),
-                menuTab
-        );
-
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, id, menuTab);
         FabricCreativeGuiComponents.COMMON_GROUPS.add(menuTab);
-
         return menuTab;
     }
 

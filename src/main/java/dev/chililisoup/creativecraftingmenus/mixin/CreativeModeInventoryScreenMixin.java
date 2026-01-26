@@ -45,6 +45,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.List;
+
 @Mixin(value = CreativeModeInventoryScreen.class, priority = 999)
 public abstract class CreativeModeInventoryScreenMixin extends AbstractContainerScreen<CreativeModeInventoryScreen.@NotNull ItemPickerMenu> {
     @Unique private static final Identifier CRAFTING_INVENTORY_BACKGROUND =
@@ -128,8 +130,10 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     private void getMenuTabY(CreativeModeTab tab, CallbackInfoReturnable<Integer> cir) {
         if (tab instanceof CreativeMenuTab) {
             int tabSpacingY = ModConfig.HANDLER.instance().tabSpacingY;
-            int count = CreativeMenuTabs.MENU_TABS.size();
-            int index = CreativeMenuTabs.MENU_TABS.indexOf(tab);
+            // TODO: Filter once every time the config changes instead of every damn time this method is called
+            List<CreativeMenuTab<?>> filtered = CreativeMenuTabs.MENU_TABS.stream().filter(CreativeMenuTab::shouldDisplay).toList();
+            int count = filtered.size();
+            int index = filtered.indexOf(tab);
             int size = (count - 1) * tabSpacingY + count * 26;
             int top = (this.height - size) / 2;
             cir.setReturnValue(top + index * (26 + tabSpacingY) - this.topPos);
@@ -285,7 +289,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
         if (selectedTab instanceof CreativeMenuTab<?> menuTab && menuTab.mouseReleased(mouseButtonEvent))
             cir.setReturnValue(true);
 
-        for (CreativeMenuTab<?> menuTab : CreativeMenuTabs.MENU_TABS) {
+        for (CreativeMenuTab<?> menuTab : CreativeMenuTabs.MENU_TABS.stream().filter(CreativeMenuTab::shouldDisplay).toList()) {
             if (this.checkTabClicked(menuTab, x, y)) {
                 this.selectTab(menuTab);
                 cir.setReturnValue(true);

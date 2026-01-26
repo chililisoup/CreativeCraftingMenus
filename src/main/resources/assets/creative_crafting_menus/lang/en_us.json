@@ -24,6 +24,8 @@
   "creative_crafting_menus.config.tabSpacingX.desc": "Horizontal spacing around the creative menu crafting tabs",
   "creative_crafting_menus.config.tabSpacingY": "Vertical Tab Spacing",
   "creative_crafting_menus.config.tabSpacingY.desc": "Vertical spacing around the creative menu crafting tabs",
+  "creative_crafting_menus.config.tabToggles": "Tab Visibility Toggles",
+  "creative_crafting_menus.config.tabToggles.desc": "Hide/show this creative menu crafting tab",
   "creative_crafting_menus.config.dyeItemColorIcons": "Dye Item Color Icons",
   "creative_crafting_menus.config.dyeItemColorIcons.desc": "Whether dye pickers should use dye items for their icons instead of colored squares",
   "creative_crafting_menus.config.bannerTooltipChanges.desc": "Allows the mod to make changes to banner item tooltips",

@@ -1,6 +1,7 @@
 package dev.chililisoup.creativecraftingmenus.gui;
 
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
+import dev.chililisoup.creativecraftingmenus.config.ModConfig;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
@@ -35,10 +36,12 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
     protected @Nullable AbstractContainerScreen<?> screen;
     protected @Nullable M menu = null;
     private boolean hidden = false;
+    public final String id;
 
-    CreativeMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
+    CreativeMenuTab(Component displayName, Supplier<ItemStack> iconGenerator, String id) {
         //noinspection DataFlowIssue
         super(null, -1, Type.INVENTORY, displayName, iconGenerator, CreativeModeTab.Builder.EMPTY_GENERATOR);
+        this.id = id;
     }
 
     abstract M createMenu(Player player);
@@ -88,7 +91,7 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
 
     @Override
     public boolean shouldDisplay() {
-        return !hidden && super.shouldDisplay();
+        return !hidden && super.shouldDisplay() && !ModConfig.HANDLER.instance().disabledTabs.contains(this.id);
     }
 
     public void hide() {
@@ -187,18 +190,25 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
     public interface MenuTabConstructor<M extends CreativeMenuTab.CreativeTabMenu<M>, T extends CreativeMenuTab<M>> {
         T accept(
                 Component component,
-                Supplier<ItemStack> supplier
+                Supplier<ItemStack> supplier,
+                String id
         );
     }
 
     public static class Builder<M extends CreativeMenuTab.CreativeTabMenu<M>, T extends CreativeMenuTab<M>> extends CreativeModeTab.Builder {
         MenuTabConstructor<M, T> constructor;
         private boolean hasDisplayName = false;
+        private @Nullable String id;
 
         public Builder(MenuTabConstructor<M, T> constructor) {
             //noinspection DataFlowIssue
             super(null, -1);
             this.constructor = constructor;
+        }
+
+        public @NotNull Builder<M, T> id(@NotNull String id) {
+            this.id = id;
+            return this;
         }
 
         @Override
@@ -223,9 +233,11 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
         @Override
         public @NotNull T build() {
             if (!hasDisplayName)
-                throw new IllegalStateException("No display name set for ItemGroup");
+                throw new IllegalStateException("No display name set for Creative Tab Menu");
+            if (this.id == null)
+                throw new IllegalStateException("No id set for Creative Tab Menu");
 
-            T menuTab = constructor.accept(this.displayName, this.iconGenerator);
+            T menuTab = constructor.accept(this.displayName, this.iconGenerator, this.id);
             menuTab.alignedRight = true;
             menuTab.canScroll = false;
             menuTab.showTitle = this.showTitle;

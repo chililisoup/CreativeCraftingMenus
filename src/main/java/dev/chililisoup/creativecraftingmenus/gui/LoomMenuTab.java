@@ -72,8 +72,8 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
     private boolean builtInGroups = true;
     private @Nullable EditBox groupNameBox;
 
-    public LoomMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
-        super(displayName, iconGenerator);
+    public LoomMenuTab(Component displayName, Supplier<ItemStack> iconGenerator, String id) {
+        super(displayName, iconGenerator, id);
     }
 
     @Override

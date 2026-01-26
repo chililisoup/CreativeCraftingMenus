@@ -23,8 +23,8 @@ import static net.minecraft.client.gui.screens.inventory.AnvilScreen.*;
 public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
     private @Nullable EditBox name;
 
-    public AnvilMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
-        super(displayName, iconGenerator);
+    public AnvilMenuTab(Component displayName, Supplier<ItemStack> iconGenerator, String id) {
+        super(displayName, iconGenerator, id);
     }
 
     @Override
@@ -80,21 +80,10 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
 
         guiGraphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
-                this.menu.slots.get(0).hasItem() ? TEXT_FIELD_SPRITE : TEXT_FIELD_DISABLED_SPRITE,
+                this.menu.getSlot(0).hasItem() ? TEXT_FIELD_SPRITE : TEXT_FIELD_DISABLED_SPRITE,
                 screen.leftPos + 64,
                 screen.topPos + 20, 110, 16
         );
-
-        if ((this.menu.slots.get(0).hasItem() || this.menu.slots.get(1).hasItem()) && !this.menu.slots.get(2).hasItem()) {
-            guiGraphics.blitSprite(
-                    RenderPipelines.GUI_TEXTURED,
-                    ERROR_SPRITE,
-                    screen.leftPos + 108,
-                    screen.topPos + 45,
-                    28,
-                    21
-            );
-        }
     }
 
     @Override
@@ -139,7 +128,6 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
                     AnvilMenuTab.this.firstSlotChanged(this.getItem());
                 }
             });
-            this.addSlot(new Slot(this.inputSlots, 1, 85, 47));
             this.addSlot(MenuHelper.resultSlot(this, this.resultSlots, 0, 143, 47));
         }
 
@@ -157,7 +145,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
             ItemStack slotStack = slot.getItem();
             resultStack = slotStack.copy();
 
-            if (!this.moveItemStackTo(slotStack, 0, 2, false))
+            if (!this.moveItemStackTo(slotStack, 0, 1, false))
                 return ItemStack.EMPTY;
 
             if (slotStack.isEmpty()) slot.setByPlayer(ItemStack.EMPTY);
@@ -186,8 +174,8 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
         }
 
         public void setItemName(String string) {
-            if (!this.getSlot(2).hasItem()) return;
-            ItemStack itemStack = this.getSlot(2).getItem();
+            if (!this.getSlot(1).hasItem()) return;
+            ItemStack itemStack = this.getSlot(1).getItem();
             if (StringUtil.isBlank(string)) itemStack.remove(DataComponents.CUSTOM_NAME);
             else itemStack.set(DataComponents.CUSTOM_NAME, Component.literal(string));
         }

@@ -1,6 +1,7 @@
 package dev.chililisoup.creativecraftingmenus.config;
 
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
+import dev.chililisoup.creativecraftingmenus.reg.CreativeMenuTabs;
 import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
 import dev.isxander.yacl3.api.controller.TickBoxControllerBuilder;
@@ -11,6 +12,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.HashSet;
 import java.util.Map;
 
 public class ModConfig {
@@ -32,6 +34,9 @@ public class ModConfig {
 
     @SerialEntry
     public int tabSpacingY = 9;
+
+    @SerialEntry(comment = "Disabled creative menu crafting tabs")
+    public HashSet<String> disabledTabs = new HashSet<>();
 
     @SerialEntry(comment = "Whether dye pickers should use dye items for their icons instead of colored squares")
     public boolean dyeItemColorIcons = true;
@@ -94,6 +99,24 @@ public class ModConfig {
                                         .step(1)
                                         .formatValue(val -> Component.literal(val + "px")))
                                 .build())
+                        .group(() -> {
+                            OptionGroup.Builder builder = OptionGroup.createBuilder()
+                                    .name(Component.translatable("creative_crafting_menus.config.tabToggles"));
+                            CreativeMenuTabs.MENU_TABS.forEach(menuTab -> builder.option(Option.<Boolean>createBuilder()
+                                    .name(menuTab.getDisplayName())
+                                    .description(OptionDescription.of(Component.translatable("creative_crafting_menus.config.tabToggles.desc")))
+                                    .binding(
+                                            !HANDLER.defaults().disabledTabs.contains(menuTab.id),
+                                            () -> !this.disabledTabs.contains(menuTab.id),
+                                            newVal -> {
+                                                if (newVal) this.disabledTabs.remove(menuTab.id);
+                                                else this.disabledTabs.add(menuTab.id);
+                                                HANDLER.save();
+                                            })
+                                    .controller(TickBoxControllerBuilder::create)
+                                    .build()));
+                            return builder.build();
+                        })
                         .option(Option.<Boolean>createBuilder()
                                 .name(Component.translatable("creative_crafting_menus.config.dyeItemColorIcons"))
                                 .description(OptionDescription.of(Component.translatable("creative_crafting_menus.config.dyeItemColorIcons.desc")))

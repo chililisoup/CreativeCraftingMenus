@@ -16,8 +16,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTabMenu> {
-    public CraftingMenuTab(Component displayName, Supplier<ItemStack> iconGenerator) {
-        super(displayName, iconGenerator);
+    public CraftingMenuTab(Component displayName, Supplier<ItemStack> iconGenerator, String id) {
+        super(displayName, iconGenerator, id);
     }
 
     @Override
