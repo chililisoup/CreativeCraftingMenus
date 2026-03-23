@@ -666,6 +666,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                         21
                 );
 
+                //? if 1.21.6 {
+                /*guiGraphics.renderItem(banner.item(), x - 2, y + 3);
+                *///?} else {
                 renderBanner(
                         guiGraphics,
                         instance.smallFlag,
@@ -676,6 +679,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                         x + 10,
                         y + 20
                 );
+                //?}
             }
         };
     }
