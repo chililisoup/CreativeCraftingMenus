@@ -1,6 +1,5 @@
 package dev.chililisoup.creativecraftingmenus.gui;
 
-import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import com.mojang.datafixers.util.Pair;
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
 import dev.chililisoup.creativecraftingmenus.util.ServerResourceProvider;
@@ -21,7 +20,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
@@ -32,7 +30,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.*;
-import net.minecraft.world.item.component.ProvidesTrimMaterial;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.equipment.trim.ArmorTrim;
 import net.minecraft.world.item.equipment.trim.TrimMaterial;
@@ -48,6 +45,20 @@ import static net.minecraft.client.gui.screens.inventory.SmithingScreen.ARMOR_ST
 import static net.minecraft.client.gui.screens.inventory.SmithingScreen.ARMOR_STAND_TRANSLATION;
 import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.SCROLLER_DISABLED_SPRITE;
 import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.SCROLLER_SPRITE;
+
+//? if > 1.21.4 {
+import net.minecraft.world.item.component.ProvidesTrimMaterial;
+import net.minecraft.resources.ResourceKey;
+//?}
+
+//? if > 1.21.6 {
+import com.mojang.blaze3d.platform.cursor.CursorTypes;
+//?} elif < 1.21.6 {
+/*import com.mojang.blaze3d.platform.Lighting;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.world.phys.Vec3;
+*///?}
 
 public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTabMenu> {
     private static final Identifier PLACEHOLDER_TRIM = CreativeCraftingMenus.id("icon/placeholder_trim_smithing_template");
@@ -84,6 +95,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     public SmithingMenuTab(Component displayName, Supplier<ItemStack> iconGenerator, String id) {
         super(displayName, iconGenerator, id);
 
+        //? if >= 1.21.6
         this.armorStandPreview.entityType = EntityType.ARMOR_STAND;
         this.armorStandPreview.showBasePlate = false;
         this.armorStandPreview.showArms = true;
@@ -93,7 +105,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         this.armorStandPreview.elytraRotY = 0F;
         this.armorStandPreview.elytraRotZ = -this.armorStandPreview.elytraRotX;
 
-        //? if < 1.21.11 {
+        //? if > 1.21.6 < 1.21.11 {
         /*this.armorStandPreview.lightCoords = 0xF000F0;
         *///?}
     }
@@ -122,10 +134,12 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         if (trimMaterials.isEmpty()) {
             trimMaterials.add(Pair.of(null, Items.BARRIER.getDefaultInstance()));
 
+            //? if > 1.21.4
             List<Item> materialItems = ServerResourceProvider.getFromComponent(DataComponents.PROVIDES_TRIM_MATERIAL);
 
             trimMaterials.addAll(ServerResourceProvider.getRegistryElements(Registries.TRIM_MATERIAL).stream().map(
                     patternRef -> {
+                        //? if > 1.21.4 {
                         ItemStack iconStack = ItemStack.EMPTY;
                         for (Item item : materialItems) {
                             ProvidesTrimMaterial materialProvider = item.components().get(DataComponents.PROVIDES_TRIM_MATERIAL);
@@ -138,6 +152,8 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                         }
 
                         return Pair.of(patternRef, iconStack);
+                        //?} else
+                        //return Pair.of(patternRef, patternRef.value().ingredient().value().getDefaultInstance());
                     }
             ).toList());
         }
@@ -149,11 +165,10 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     public void render(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         this.renderScrollBar(screen, guiGraphics, mouseX, mouseY);
 
-        guiGraphics.submitEntityRenderState(
+        renderArmorStand(
+                guiGraphics,
                 this.armorStandPreview,
                 30F,
-                ARMOR_STAND_TRANSLATION, ARMOR_STAND_ANGLE,
-                null,
                 screen.leftPos + screen.imageWidth - 60,
                 screen.topPos + 10,
                 screen.leftPos + screen.imageWidth - 8,
@@ -168,8 +183,9 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
 
             boolean hovered = mouseX >= x && mouseY >= y && mouseX < x + 16 && mouseY < y + 18;
             if (hovered) {
+                //? if > 1.21.6
                 if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                guiGraphics.setTooltipForNextFrame(page.tooltip, mouseX, mouseY);
+                guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, page.tooltip, mouseX, mouseY);
             }
 
             guiGraphics.blitSprite(
@@ -186,6 +202,33 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         this.renderPageContents(screen, guiGraphics, mouseX, mouseY);
     }
 
+    private static void renderArmorStand(GuiGraphics guiGraphics, ArmorStandRenderState renderState, float scale, int left, int top, int right, int bottom) {
+        //? if >= 1.21.6 {
+        guiGraphics.submitEntityRenderState(
+                renderState, scale, ARMOR_STAND_TRANSLATION, ARMOR_STAND_ANGLE, null, left, top, right, bottom
+        );
+        //?} else {
+        /*guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate((left + right) / 2.0, (top + bottom) / 2.0, 50.0);
+        guiGraphics.pose().scale(scale, scale, -scale);
+        guiGraphics.pose().translate(0, 1, 0);
+        guiGraphics.pose().translate(new Vec3(ARMOR_STAND_TRANSLATION));
+        guiGraphics.pose().mulPose(ARMOR_STAND_ANGLE);
+        guiGraphics.flush();
+        Lighting.setupForEntityInInventory();
+        EntityRenderDispatcher entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+        entityRenderDispatcher.setRenderShadow(false);
+        guiGraphics.drawSpecial(multiBufferSource -> {
+            EntityRenderer<?, ArmorStandRenderState> renderer = (EntityRenderer<?, ArmorStandRenderState>) entityRenderDispatcher.renderers.get(EntityType.ARMOR_STAND);
+            renderer.render(renderState, guiGraphics.pose(), multiBufferSource, 0xF000F0);
+        });
+        guiGraphics.flush();
+        entityRenderDispatcher.setRenderShadow(true);
+        guiGraphics.pose().popMatrix();
+        Lighting.setupFor3DItems();
+        *///?}
+    }
+
     private void renderScrollBar(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
         int x = screen.leftPos + 118;
         int y = screen.topPos + 16 + (int) (39F * this.scrollOffs);
@@ -199,8 +242,10 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                 15
         );
 
+        //? if > 1.21.6 {
         if (mouseX >= x && mouseX < x + 12 && mouseY >= y && mouseY < y + 15)
             guiGraphics.requestCursor(this.scrolling ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+        //?}
     }
 
     private void renderPageContents(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -214,8 +259,9 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
 
             boolean hovered = mouseX >= x && mouseY >= y && mouseX < x + 16 && mouseY < y + 18;
             if (hovered) {
+                //? if > 1.21.6
                 if (!item.selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                guiGraphics.setTooltipForNextFrame(item.tooltip, mouseX, mouseY);
+                guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, item.tooltip, mouseX, mouseY);
             }
 
             guiGraphics.blitSprite(
@@ -497,6 +543,8 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                         this.armorStandPreview.headItem,
                         itemStack,
                         ItemDisplayContext.HEAD,
+                        //? if <= 1.21.4
+                        //false,
                         null,
                         null,
                         0
@@ -515,6 +563,8 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                         this.armorStandPreview.leftHandItemState,
                         itemStack,
                         ItemDisplayContext.THIRD_PERSON_LEFT_HAND,
+                        //? if <= 1.21.4
+                        //true,
                         null,
                         null,
                         0

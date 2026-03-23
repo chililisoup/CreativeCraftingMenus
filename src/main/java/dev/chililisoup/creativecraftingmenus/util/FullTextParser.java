@@ -6,14 +6,17 @@ import eu.pb4.placeholders.api.parsers.NodeParser;
 import eu.pb4.placeholders.api.parsers.ParserBuilder;
 import net.minecraft.network.chat.*;
 import net.minecraft.network.chat.contents.*;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
+
+//? if > 1.21.6 {
 import net.minecraft.network.chat.contents.objects.AtlasSprite;
 import net.minecraft.network.chat.contents.objects.ObjectInfo;
 import net.minecraft.network.chat.contents.objects.PlayerSprite;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.component.ResolvableProfile;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
+//?}
 
 public final class FullTextParser {
     private static final NodeParser PARSER;
@@ -59,6 +62,7 @@ public final class FullTextParser {
             return builder.toString();
         }
 
+        //? if > 1.21.6 {
         if (contents instanceof ObjectContents(ObjectInfo objectInfo)) {
             if (objectInfo instanceof PlayerSprite(ResolvableProfile player, boolean hat)) {
                 var profile = player.unpack();
@@ -87,6 +91,7 @@ public final class FullTextParser {
                         sprite /*? if >= 1.21.11 {*/ .toShortString() /*?}*/
                 );
         }
+        //?}
 
         return "";
     }

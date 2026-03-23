@@ -1,13 +1,10 @@
 package dev.chililisoup.creativecraftingmenus.gui.components;
 
-import com.mojang.blaze3d.platform.cursor.CursorType;
-import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import dev.chililisoup.creativecraftingmenus.util.VersionHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.inventory.StonecutterScreen;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +12,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
+
+//? if > 1.21.6 {
+import com.mojang.blaze3d.platform.cursor.CursorType;
+import com.mojang.blaze3d.platform.cursor.CursorTypes;
+import net.minecraft.client.input.MouseButtonEvent;
+//?}
 
 public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.Entry<T>> {
     private final int closedHeight;
@@ -95,6 +98,7 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
                         this.getBottom(),
                         0x40FFFFFF
                 );
+                //? if > 1.21.6
                 guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
             }
 
@@ -112,40 +116,76 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
             return;
         }
 
+        //? if > 1.21.6
         if (this.isHovered()) guiGraphics.requestCursor(CursorType.DEFAULT);
         super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
+    //? if > 1.21.6 {
     public boolean mouseClicked(@NotNull MouseButtonEvent mouseButtonEvent, boolean isDoubleClick) {
+    //?} else
+    //public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (!this.open) {
+            //? if > 1.21.6
             int button = mouseButtonEvent.button();
             if (button == 0 && !this.children().isEmpty()) {
                 this.open = true;
                 this.setScrollAmount(0);
                 Entry<T> selected = this.getSelected();
-                if (selected != null) this.scrollToEntry(selected);
+                if (selected != null)
+                    //? if > 1.21.6 {
+                    this.scrollToEntry(selected);
+                    //?} else
+                    //this.centerScrollOn(selected);
+
                 this.playDownSound(this.minecraft.getSoundManager());
             }
             return true;
         }
 
+        //? if > 1.21.6 {
         return super.mouseClicked(mouseButtonEvent, isDoubleClick);
+        //?} else
+        //return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseReleased(@NotNull MouseButtonEvent mouseButtonEvent) {
-        return this.open && super.mouseReleased(mouseButtonEvent);
+    public boolean mouseReleased(
+            //? if > 1.21.6 {
+            @NotNull MouseButtonEvent mouseButtonEvent
+            //?} else
+            //double mouseX, double mouseY, int button
+    ) {
+        return this.open && super.mouseReleased(
+                //? if > 1.21.6 {
+                mouseButtonEvent
+                //?} else
+                //mouseX, mouseY, button
+        );
     }
 
     @Override
-    public boolean mouseDragged(@NotNull MouseButtonEvent mouseButtonEvent, double mouseX, double mouseY) {
+    public boolean mouseDragged(
+            //? if > 1.21.6 {
+            @NotNull MouseButtonEvent mouseButtonEvent, double dragX, double dragY
+            //?} else
+            //double mouseX, double mouseY, int button, double dragX, double dragY
+    ) {
         if (!this.open) return false;
-        if (!this.scrolling) return super.mouseDragged(mouseButtonEvent, mouseX, mouseY);
+        if (!this.scrolling) return super.mouseDragged(
+                //? if > 1.21.6 {
+                mouseButtonEvent, dragX, dragY
+                //?} else
+                //mouseX, mouseY, button, dragX, dragY
+        );
 
-        if (mouseButtonEvent.y() < this.getY()) this.setScrollAmount(0.0);
-        else if (mouseButtonEvent.y() > this.getBottom()) this.setScrollAmount(this.maxScrollAmount());
-        else this.setScrollAmount(this.scrollAmount() + mouseY * Math.max(
+        //? if > 1.21.6
+        double mouseY = mouseButtonEvent.y();
+
+        if (mouseY < this.getY()) this.setScrollAmount(0.0);
+        else if (mouseY > this.getBottom()) this.setScrollAmount(this.maxScrollAmount());
+        else this.setScrollAmount(this.scrollAmount() + dragY * Math.max(
                 1.0,
                 (double) Math.max(1, this.maxScrollAmount()) / (this.getHeight() -  this.scrollerHeight())
         ));
@@ -179,13 +219,27 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
         return 15;
     }
 
+    //? if > 1.21.6
     @Override
     protected boolean isOverScrollbar(double mouseX, double mouseY) {
         return mouseX >= this.scrollBarX() && mouseX < this.scrollBarX() + 12 && mouseY >= this.getY() && mouseY < this.getBottom();
     }
 
+    //? if <= 1.21.6 {
+    /*@Override
+    public boolean updateScrolling(double mouseX, double mouseY, int button) {
+        this.scrolling = this.scrollbarVisible() && this.isValidClickButton(button) && this.isOverScrollbar(mouseX, mouseY);
+        return this.scrolling;
+    }
+    *///?}
+
     @Override
-    protected void renderScrollbar(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    protected void renderScrollbar(
+            //? if > 1.21.6 {
+            @NotNull GuiGraphics guiGraphics, int mouseX, int mouseY
+            //?} else
+            //@NotNull GuiGraphics guiGraphics
+    ) {
         guiGraphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
                 this.scrollbarVisible() ? StonecutterScreen.SCROLLER_SPRITE : StonecutterScreen.SCROLLER_DISABLED_SPRITE,
@@ -195,8 +249,10 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
                 this.scrollerHeight()
         );
 
+        //? if > 1.21.6 {
         if (this.scrollbarVisible() && this.isOverScrollbar(mouseX, mouseY))
             guiGraphics.requestCursor(this.scrolling ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+        //?}
     }
 
     public static class Entry<T> extends ObjectSelectionList.Entry<DropdownSelector.Entry<T>> {
@@ -214,26 +270,27 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
         }
 
         @Override
+        //? if > 1.21.6 {
         public void renderContent(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, boolean hovered, float partialTick) {
+        //?} else
+        //public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovered, float partialTick) {
+            //? if > 1.21.6 {
+            int left = this.getContentX();
+            int top = this.getContentY();
+            int width = this.getContentWidth();
+            int height = this.getContentHeight();
+            //?} else
+            //width -= 4;
+
             if (hovered) {
-                guiGraphics.fill(
-                        this.getContentX(),
-                        this.getContentY(),
-                        this.getContentRight(),
-                        this.getContentBottom(),
-                        0x40FFFFFF
-                );
+                guiGraphics.fill(left, top, left + width, top + height, 0x40FFFFFF);
+
+                //? if > 1.21.6
                 guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
             }
 
             VersionHelper.drawScrollingString(
-                    guiGraphics,
-                    this.name,
-                    this.getContentX(),
-                    this.getContentX(),
-                    this.getContentRight(),
-                    this.getContentY(),
-                    this.getContentBottom()
+                    guiGraphics, this.name, left, left, left + width, top, top + height
             );
         }
     }

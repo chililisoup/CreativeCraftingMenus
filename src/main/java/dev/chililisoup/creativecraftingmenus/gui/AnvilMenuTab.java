@@ -1,6 +1,5 @@
 package dev.chililisoup.creativecraftingmenus.gui;
 
-import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
 import dev.chililisoup.creativecraftingmenus.gui.components.DropdownSelector;
 import dev.chililisoup.creativecraftingmenus.gui.components.NameLoreEditBox;
@@ -36,6 +35,12 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+//? if > 1.21.6 {
+import com.mojang.blaze3d.platform.cursor.CursorTypes;
+//?} else {
+/*import it.unimi.dsi.fastutil.objects.AbstractObject2IntMap;
+*///?}
 
 //? if < 1.21.11 {
 /*import net.minecraft.Util;
@@ -122,8 +127,9 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
 
             boolean hovered = mouseX >= x && mouseY >= y && mouseX < x + 16 && mouseY < y + 18;
             if (hovered) {
+                //? if > 1.21.6
                 if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                guiGraphics.setTooltipForNextFrame(page.tooltip, mouseX, mouseY);
+                guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, page.tooltip, mouseX, mouseY);
             }
 
             guiGraphics.blitSprite(
@@ -156,8 +162,10 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
                 15
         );
 
+        //? if > 1.21.6 {
         if (mouseX >= x && mouseX < x + 12 && mouseY >= y && mouseY < y + 15)
             guiGraphics.requestCursor(this.scrolling ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+        //?}
     }
 
     private void renderPageContents(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -178,6 +186,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
 
             boolean hovered = mouseX >= x && mouseY >= y && mouseX < x + 11 && mouseY < y + 11;
             if (hovered) {
+                //? if > 1.21.6
                 guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
                 guiGraphics.setComponentTooltipForNextFrame(
                         Minecraft.getInstance().font,
@@ -232,8 +241,10 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
                     boolean levelHovered = anyHovered && !addDeleteHovered && !labelHovered;
 
                     if (anyHovered) {
+                        //? if > 1.21.6
                         if (!labelHovered) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
                         if (!levelHovered) guiGraphics.setTooltipForNextFrame(
+                                Minecraft.getInstance().font,
                                 labelHovered ? label : Component.translatable("container.creative_crafting_menus.anvil.remove_enchantment"),
                                 mouseX,
                                 mouseY
@@ -280,8 +291,9 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
                     instance.enchantSelector.setY(y);
 
                     if (addDeleteHovered) {
+                        //? if > 1.21.6
                         guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                        guiGraphics.setTooltipForNextFrame(label, mouseX, mouseY);
+                        guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, label, mouseX, mouseY);
                     }
 
                     guiGraphics.blitSprite(
@@ -461,7 +473,12 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
         if (keyEvent.isEscape() || this.screen == null || this.nameLoreBox == null) return false;
-        return this.nameLoreBox.keyPressed(keyEvent) || (this.nameLoreBox.isActive() && this.nameLoreBox.isFocused() && this.nameLoreBox.visible);
+        return this.nameLoreBox.keyPressed(
+                //? if > 1.21.6 {
+                keyEvent
+                //?} else
+                //keyEvent.key(), keyEvent.scancode(), keyEvent.modifiers()
+        ) || (this.nameLoreBox.isActive() && this.nameLoreBox.isFocused() && this.nameLoreBox.visible);
     }
 
     private void onNameLoreChanged(String nameLore) {
@@ -691,11 +708,14 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
             for (Holder<Enchantment> enchant : sortedEnchantSet) {
                 int level = enchants.getLevel(enchant);
                 if (enchants.getLevel(enchant) > 0) sorted.add(
+                        //? if > 1.21.6 {
                         //? if < 1.21.11 {
                         /*(Object2IntMap.Entry<Holder<Enchantment>>) Map
                         *///?} else
                         Object2IntMap
                         .entry(enchant, level)
+                        //?} else
+                        //new AbstractObject2IntMap.BasicEntry<>(enchant, level)
                 );
             }
 

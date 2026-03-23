@@ -1,14 +1,17 @@
 package dev.chililisoup.creativecraftingmenus.gui.components;
 
-import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.client.gui.screens.inventory.StonecutterScreen;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
 import org.jetbrains.annotations.NotNull;
+
+//? if > 1.21.6 {
+import com.mojang.blaze3d.platform.cursor.CursorTypes;
+import net.minecraft.client.input.KeyEvent;
+//?}
 
 public class NameLoreEditBox extends MultiLineEditBox {
     public boolean isEditable = true;
@@ -27,12 +30,15 @@ public class NameLoreEditBox extends MultiLineEditBox {
                 width,
                 height,
                 CommonComponents.EMPTY,
+                //? if >= 1.21.6 {
                 CommonComponents.EMPTY,
                 0xFFE0E0E0,
                 true,
                 0xFFD0D0D0,
                 true,
                 true
+                //?} else
+                //CommonComponents.EMPTY
         );
     }
 
@@ -42,8 +48,18 @@ public class NameLoreEditBox extends MultiLineEditBox {
     }
 
     @Override
-    public boolean keyPressed(@NotNull KeyEvent event) {
-        return this.isEditable && super.keyPressed(event);
+    public boolean keyPressed(
+            //? if > 1.21.6 {
+            @NotNull KeyEvent event
+             //?} else
+            //int keyCode, int scanCode, int modifiers
+    ) {
+        return this.isEditable && super.keyPressed(
+                //? if > 1.21.6 {
+                event
+                //?} else
+                //keyCode, scanCode, modifiers
+        );
     }
 
     @Override
@@ -66,13 +82,27 @@ public class NameLoreEditBox extends MultiLineEditBox {
         return 15;
     }
 
+    //? if > 1.21.6
     @Override
     protected boolean isOverScrollbar(double mouseX, double mouseY) {
         return mouseX >= this.scrollBarX() && mouseX < this.scrollBarX() + 12 && mouseY >= this.getY() && mouseY < this.getBottom();
     }
 
+    //? if <= 1.21.6 {
+    /*@Override
+    public boolean updateScrolling(double mouseX, double mouseY, int button) {
+        this.scrolling = this.scrollbarVisible() && this.isValidClickButton(button) && this.isOverScrollbar(mouseX, mouseY);
+        return this.scrolling;
+    }
+    *///?}
+
     @Override
-    protected void renderScrollbar(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    protected void renderScrollbar(
+            //? if > 1.21.6 {
+            @NotNull GuiGraphics guiGraphics, int mouseX, int mouseY
+             //?} else
+            //@NotNull GuiGraphics guiGraphics
+    ) {
         guiGraphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
                 this.scrollbarVisible() ? StonecutterScreen.SCROLLER_SPRITE : StonecutterScreen.SCROLLER_DISABLED_SPRITE,
@@ -82,7 +112,9 @@ public class NameLoreEditBox extends MultiLineEditBox {
                 this.scrollerHeight()
         );
 
+        //? if > 1.21.6 {
         if (this.scrollbarVisible() && this.isOverScrollbar(mouseX, mouseY))
             guiGraphics.requestCursor(this.scrolling ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+        //?}
     }
 }

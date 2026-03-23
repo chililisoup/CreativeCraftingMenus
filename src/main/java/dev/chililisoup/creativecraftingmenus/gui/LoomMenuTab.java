@@ -1,6 +1,5 @@
 package dev.chililisoup.creativecraftingmenus.gui;
 
-import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
 import dev.chililisoup.creativecraftingmenus.config.BannerPresets;
 import dev.chililisoup.creativecraftingmenus.config.ModConfig;
@@ -15,8 +14,6 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.Sheets;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -34,11 +31,26 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
+//? if >= 1.21.6 {
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+//?} else {
+/*import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.blockentity.BannerRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.ModelBakery;
+*///?}
+
+//? if > 1.21.6 {
+import com.mojang.blaze3d.platform.cursor.CursorTypes;
+//?}
+
 //? if < 1.21.11 {
 /*import net.minecraft.client.model.BannerFlagModel;
 *///?} else {
 import net.minecraft.client.model.object.banner.BannerFlagModel;
- //?}
+//?}
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,7 +131,12 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         this.flag = new BannerFlagModel(modelPart);
         this.smallFlag = new BannerFlagModel(modelPart) {
             @Override
-            public void setupAnim(@NotNull Float value) {
+            public void setupAnim(
+                    //? if > 1.21.6 {
+                    @NotNull Float value
+                    //?} else
+                    //float value
+            ) {
                 super.setupAnim(value);
                 flagPart.offsetScale(new Vector3f(-0.55F, -0.525F, 0F));
                 flagPart.y += 21F;
@@ -153,7 +170,8 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         Item item = itemStack.getItem();
         if (!(item instanceof BannerItem bannerItem)) return;
         DyeColor bannerColor = bannerItem.getColor();
-        guiGraphics.submitBannerPatternRenderState(
+        renderBanner(
+                guiGraphics,
                 this.flag,
                 bannerColor,
                 itemStack.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY),
@@ -174,8 +192,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
 
             boolean hovered = mouseX >= x && mouseY >= y && mouseX < x + 16 && mouseY < y + 18;
             if (hovered) {
+                //? if > 1.21.6
                 if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                guiGraphics.setTooltipForNextFrame(page.tooltip, mouseX, mouseY);
+                guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, page.tooltip, mouseX, mouseY);
             }
 
             guiGraphics.blitSprite(
@@ -188,7 +207,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
             );
 
             guiGraphics.pose().pushMatrix();
-            guiGraphics.pose().translate(x, y + 1);
+            guiGraphics.pose().translate(x, y + 1 /*? < 1.21.6 {*//*, 0*//*?}*/);
             page.iconRenderer.accept(this, guiGraphics);
             guiGraphics.pose().popMatrix();
         }
@@ -201,7 +220,12 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         else this.renderSecondaryPresetsPageContents(screen, guiGraphics, mouseX, mouseY);
     }
 
-    private void renderBannerOnButton(GuiGraphics guiGraphics, int x, int y, TextureAtlasSprite textureAtlasSprite) {
+    private void renderBannerOnButton(GuiGraphics guiGraphics, int x, int y, Holder<@NotNull BannerPattern> pattern) {
+        //? if >= 1.21.6 {
+        //? if > 1.21.6 {
+        TextureAtlasSprite textureAtlasSprite = guiGraphics.getSprite(Sheets.getBannerMaterial(pattern));
+        //?} else
+        //TextureAtlasSprite textureAtlasSprite = Sheets.getBannerMaterial(pattern).sprite();
         guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(x + 4, y + 2);
         float u0 = textureAtlasSprite.getU0();
@@ -212,13 +236,82 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         guiGraphics.fill(0, 0, 5, 10, DyeColor.GRAY.getTextureDiffuseColor());
         guiGraphics.blit(textureAtlasSprite.atlasLocation(), 0, 0, 5, 10, u0, u1, v0, v1);
         guiGraphics.pose().popMatrix();
+        //?} else {
+        /*Lighting.setupForFlatItems();
+        PoseStack poseStack = new PoseStack();
+        poseStack.pushMatrix();
+        poseStack.translate(x + 0.5F, (float)(y + 16), 0.0F);
+        poseStack.scale(6.0F, -6.0F, 1.0F);
+        poseStack.translate(0.5F, 0.0F, 0.0F);
+        poseStack.translate(0.5F, 0.5F, 0.5F);
+        poseStack.scale(0.6666667F, -0.6666667F, -0.6666667F);
+        guiGraphics.drawSpecial(
+                multiBufferSource -> BannerRenderer.renderPatterns(
+                        poseStack,
+                        multiBufferSource,
+                        0xF000F0,
+                        OverlayTexture.NO_OVERLAY,
+                        this.flag.root(),
+                        ModelBakery.BANNER_BASE,
+                        true,
+                        DyeColor.GRAY,
+                        new BannerPatternLayers.Builder().add(pattern, DyeColor.WHITE).build()
+                )
+        );
+        poseStack.popMatrix();
+        guiGraphics.flush();
+        Lighting.setupFor3DItems();
+        *///?}
+    }
+
+    private static void renderBanner(
+            GuiGraphics guiGraphics,
+            BannerFlagModel flag,
+            DyeColor baseColor,
+            BannerPatternLayers resultBannerPatterns,
+            int x0,
+            int y0,
+            int x1,
+            int y1
+    ) {
+        //? if >= 1.21.6 {
+        guiGraphics.submitBannerPatternRenderState(flag /*? if 1.21.6 {*//*.root()*//*?}*/, baseColor, resultBannerPatterns, x0, y0, x1, y1);
+         //?} else {
+        /*guiGraphics.flush();
+        Lighting.setupForFlatItems();
+        guiGraphics.pose().pushMatrix();
+
+        guiGraphics.pose().translate(x0, y1, 0F);
+        guiGraphics.pose().scale(24F * (x1 - x0) / 20F, 24F * (y1 - y0) / 40F, 1F);
+        guiGraphics.pose().translate(0.0F, 0.0F, 0.5F);
+        guiGraphics.pose().scale(0.6666667F, 0.6666667F, -0.6666667F);
+        guiGraphics.pose().translate(0.625F, 0.25F, 0.0F);
+
+        guiGraphics.drawSpecial(
+                multiBufferSource -> BannerRenderer.renderPatterns(
+                        guiGraphics.pose(),
+                        multiBufferSource,
+                        0xF000F0,
+                        OverlayTexture.NO_OVERLAY,
+                        flag.root(),
+                        ModelBakery.BANNER_BASE,
+                        true,
+                        baseColor,
+                        resultBannerPatterns
+                )
+        );
+
+        guiGraphics.pose().popMatrix();
+        guiGraphics.flush();
+        Lighting.setupFor3DItems();
+        *///?}
     }
 
     private void renderDyeIcon(GuiGraphics guiGraphics, DyeColor color, int x, int y) {
         if (ModConfig.HANDLER.instance().dyeItemColorIcons) {
             guiGraphics.pose().pushMatrix();
-            guiGraphics.pose().translate(x + 1, y);
-            guiGraphics.pose().scale(3F / 4F);
+            guiGraphics.pose().translate(x + 1, y /*? < 1.21.6 {*//*, 0*//*?}*/);
+            guiGraphics.pose().scale(3F / 4F /*? < 1.21.6 {*//*, 3F / 4F, 3F / 4F*//*?}*/);
             guiGraphics.renderItem(DyeItem.byColor(color).getDefaultInstance(), 0, 0);
             guiGraphics.pose().popMatrix();
         } else guiGraphics.fill(x + 2, y + 2, x + 12, y + 12, color.getTextureDiffuseColor());
@@ -237,8 +330,10 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                 15
         );
 
+        //? if > 1.21.6 {
         if (mouseX >= x && mouseX < x + 12 && mouseY >= y && mouseY < y + 15)
             guiGraphics.requestCursor(this.scrolling ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+        //?}
     }
 
     private void renderButtons(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -264,8 +359,10 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                     i == 1 && this.selectedLayer < 0;
             boolean hovered = !disabled && mouseX >= x && mouseY >= top && mouseX < x + 18 && mouseY < top + 13;
             if (hovered) {
+                //? if > 1.21.6
                 guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
                 guiGraphics.setTooltipForNextFrame(
+                        Minecraft.getInstance().font,
                         Component.translatable(
                                 "container.creative_crafting_menus.loom." + name + "_button" + (presetsPage ? ".presets" : "")
                         ),
@@ -306,8 +403,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
             boolean hovered = mouseX >= x && mouseY >= y && mouseX < x + 14 && mouseY < y + 14;
 
             if (hovered) {
+                //? if > 1.21.6
                 if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                guiGraphics.setTooltipForNextFrame(DyeItem.byColor(color).getName(), mouseX, mouseY);
+                guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, DyeItem.byColor(color).getName(), mouseX, mouseY);
             }
 
             guiGraphics.blitSprite(
@@ -353,8 +451,10 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                 boolean hovered = !disabled && mouseX >= x && mouseY >= y && mouseX < x + 14 && mouseY < y + 14;
 
                 if (hovered) {
+                    //? if > 1.21.6
                     if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
                     guiGraphics.setTooltipForNextFrame(
+                            Minecraft.getInstance().font,
                             Component.translatable(pattern.value().translationKey() + "." + dyeColor.getName()),
                             mouseX,
                             mouseY
@@ -370,7 +470,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                         14
                 );
 
-                instance.renderBannerOnButton(guiGraphics, x, y, guiGraphics.getSprite(Sheets.getBannerMaterial(pattern)));
+                instance.renderBannerOnButton(guiGraphics, x, y, pattern);
             }
         };
     }
@@ -402,8 +502,10 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                         mouseX >= left && mouseY >= y && mouseX < left + 56 && mouseY < y + 14;
 
                 if (hovered) {
+                    //? if > 1.21.6
                     if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
                     guiGraphics.setTooltipForNextFrame(
+                            Minecraft.getInstance().font,
                             i == 0 ?
                                     instance.menu.getBannerItem().getName() :
                                     Component.translatable(pattern.value().translationKey() + "." + dyeColor.getName()),
@@ -413,8 +515,10 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                 }
 
                 if (upHovered || downHovered) {
+                    //? if > 1.21.6
                     guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
                     guiGraphics.setTooltipForNextFrame(
+                            Minecraft.getInstance().font,
                             Component.translatable(
                                     "container.creative_crafting_menus.loom.move_layer_" + (upHovered ? "up" : "down")
                             ),
@@ -451,7 +555,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                 );
 
                 guiGraphics.drawString(Minecraft.getInstance().font, (i > 0) ? String.valueOf(i) : "-", left + 3, y + 3, 0xFFFFFFFF);
-                instance.renderBannerOnButton(guiGraphics, left + 14, y, guiGraphics.getSprite(Sheets.getBannerMaterial(pattern)));
+                instance.renderBannerOnButton(guiGraphics, left + 14, y, pattern);
                 instance.renderDyeIcon(guiGraphics, dyeColor, left + 28, y);
             }
         };
@@ -480,8 +584,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
 
                     boolean hovered = mouseX >= left && mouseY >= y && mouseX < left + 56 && mouseY < y + 14;
                     if (hovered) {
+                        //? if > 1.21.6
                         guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                        guiGraphics.setTooltipForNextFrame(label, mouseX, mouseY);
+                        guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, label, mouseX, mouseY);
                     }
 
                     guiGraphics.blitSprite(
@@ -511,8 +616,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         return (guiGraphics, left, top, mouseX, mouseY) -> {
             boolean hovered = mouseX >= left && mouseY >= top && mouseX < left + 7 && mouseY < top + 14;
             if (hovered) {
+                //? if > 1.21.6
                 guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                guiGraphics.setTooltipForNextFrame(Component.translatable("gui.back"), mouseX, mouseY);
+                guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, Component.translatable("gui.back"), mouseX, mouseY);
             }
 
             guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, BUTTON_SELECTED, left, top, 56, 14);
@@ -548,6 +654,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                 BannerPresets.BannerPresetItem banner = group.banners().get(i);
 
                 boolean bannerHovered = !hovered && mouseX >= x && mouseY >= y && mouseX < x + 11 && mouseY < y + 21;
+                //? if > 1.21.6
                 if (bannerHovered) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
 
                 guiGraphics.blitSprite(
@@ -559,8 +666,15 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                         21
                 );
 
-                guiGraphics.submitBannerPatternRenderState(
-                        instance.smallFlag, banner.color, banner.layers, (x + 1), (y + 1), (x + 10), (y + 20)
+                renderBanner(
+                        guiGraphics,
+                        instance.smallFlag,
+                        banner.color,
+                        banner.layers,
+                        x + 1,
+                        y + 1,
+                        x + 10,
+                        y + 20
                 );
             }
         };
@@ -582,8 +696,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
             boolean selected = (i == 0) == this.builtInGroups;
             boolean hovered = mouseX >= left && mouseY >= y && mouseX < left + 56 && mouseY < y + 14;
             if (hovered) {
+                //? if > 1.21.6
                 if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                guiGraphics.setTooltipForNextFrame(label, mouseX, mouseY);
+                guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, label, mouseX, mouseY);
             }
 
             guiGraphics.blitSprite(
@@ -942,7 +1057,12 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
             this.screen.clearFocus();
             return true;
         }
-        return this.groupNameBox.keyPressed(keyEvent) || this.groupNameBox.canConsumeInput();
+        return this.groupNameBox.keyPressed(
+                //? if > 1.21.6 {
+                keyEvent
+                //?} else
+                //keyEvent.key(), keyEvent.scancode(), keyEvent.modifiers()
+        ) || this.groupNameBox.canConsumeInput();
     }
 
     private void onGroupNameChanged(String key) {
