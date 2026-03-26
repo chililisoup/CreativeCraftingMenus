@@ -1,7 +1,7 @@
 package dev.chililisoup.creativecraftingmenus.gui.components;
 
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.client.gui.screens.inventory.StonecutterScreen;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -73,8 +73,16 @@ public class NameLoreEditBox extends MultiLineEditBox {
     }
 
     @Override
-    protected int scrollBarY() {
-        return this.scrollbarVisible() ? super.scrollBarY() : this.getY();
+    //? if >= 26 {
+    public int scrollBarY() {
+    //?} else
+    //protected int scrollBarY() {
+        return
+                //? if >= 26 {
+                this.scrollable() ?
+                //?} else
+                //this.scrollbarVisible() ?
+                        super.scrollBarY() : this.getY();
     }
 
     @Override
@@ -97,15 +105,24 @@ public class NameLoreEditBox extends MultiLineEditBox {
     *///?}
 
     @Override
-    protected void renderScrollbar(
+    //? if >= 26 {
+    protected void extractScrollbar(
+    //?} else
+    //protected void renderScrollbar(
             //? if > 1.21.6 {
-            @NotNull GuiGraphics guiGraphics, int mouseX, int mouseY
+            @NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY
              //?} else
-            //@NotNull GuiGraphics guiGraphics
+            //@NotNull GuiGraphicsExtractor guiGraphics
     ) {
+        boolean scrollable =
+                //? if >= 26 {
+                this.scrollable();
+                //?} else
+                //this.scrollbarVisible();
+
         guiGraphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
-                this.scrollbarVisible() ? StonecutterScreen.SCROLLER_SPRITE : StonecutterScreen.SCROLLER_DISABLED_SPRITE,
+                scrollable ? StonecutterScreen.SCROLLER_SPRITE : StonecutterScreen.SCROLLER_DISABLED_SPRITE,
                 this.scrollBarX(),
                 this.scrollBarY(),
                 12,
@@ -113,7 +130,7 @@ public class NameLoreEditBox extends MultiLineEditBox {
         );
 
         //? if > 1.21.6 {
-        if (this.scrollbarVisible() && this.isOverScrollbar(mouseX, mouseY))
+        if (scrollable && this.isOverScrollbar(mouseX, mouseY))
             guiGraphics.requestCursor(this.scrolling ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
         //?}
     }

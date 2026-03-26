@@ -12,7 +12,7 @@ import dev.chililisoup.creativecraftingmenus.gui.LoomMenuTab;
 import dev.chililisoup.creativecraftingmenus.reg.CreativeMenuTabs;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeInventoryListener;
@@ -28,7 +28,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.CreativeModeTab;
@@ -152,11 +152,18 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
         }
     }
 
-    @Inject(method = "renderTabButton", at = @At("HEAD"), cancellable = true)
+    @Inject(
+            //? if < 26 {
+            /*method = "renderTabButton",
+            *///?} else
+            method = "extractTabButton",
+            at = @At("HEAD"),
+            cancellable = true
+    )
     //? if < 1.21.11 {
-    /*private void renderMenuTabButton(GuiGraphics guiGraphics, CreativeModeTab tab, CallbackInfo ci) {
+    /*private void renderMenuTabButton(GuiGraphicsExtractor guiGraphics, CreativeModeTab tab, CallbackInfo ci) {
     *///?} else
-    private void renderMenuTabButton(GuiGraphics guiGraphics, int mouseX, int mouseY, CreativeModeTab tab, CallbackInfo ci) {
+    private void renderMenuTabButton(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, CreativeModeTab tab, CallbackInfo ci) {
         if (!(tab instanceof CreativeMenuTab)) return;
 
         boolean selected = tab == selectedTab && Minecraft.getInstance().screen == this;
@@ -170,24 +177,29 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
         //?}
 
         guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, 26, 26);
-        guiGraphics.renderItem(tab.getIconItem(), x + 5, y + 5);
+        guiGraphics.item(tab.getIconItem(), x + 5, y + 5);
 
         ci.cancel();
     }
 
     @WrapOperation(
-            method = "renderLabels", at = @At(
+            //? if < 26 {
+            /*method = "renderLabels", at = @At(
+            *///?} else
+            method = "extractLabels", at = @At(
             value = "INVOKE",
-            //? if >= 1.21.6 {
-            target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)V"
-            //?} else
-            //target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)I"
+            //? if >= 26 {
+            target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;text(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)V"
+            //?} elif >= 1.21.6 {
+            /*target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)V"
+            *///?} else
+            //target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)I"
     ))
     //? if >= 1.21.6 {
     private void drawMenuTabLabels(
     //?} else
     //private int drawMenuTabLabels(
-            GuiGraphics guiGraphics,
+            GuiGraphicsExtractor guiGraphics,
             Font font,
             Component title,
             int x,
@@ -203,12 +215,23 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
                     y,
                     color
             );
-            /*? < 1.21.6 {*//*return*//*?}*/ guiGraphics.drawString(font, this.playerInventoryTitle, 9, this.imageHeight - 94, color, dropShadow);
+            /*? < 1.21.6 {*//*return*//*?}*/ guiGraphics.text(font, this.playerInventoryTitle, 9, this.imageHeight - 94, color, dropShadow);
         } else /*? < 1.21.6 {*//*return*//*?}*/ original.call(guiGraphics, font, title, x, y, color, dropShadow);
     }
 
-    @Inject(method = "renderBg", at = @At("TAIL"))
-    private void renderTabMenu(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY, CallbackInfo ci) {
+    @Inject(
+            //? if < 26 {
+            /*method = "renderBg",
+            *///?} else
+            method = "extractBackground",
+            at = @At("TAIL")
+    )
+    private void renderTabMenu(
+            //? if < 26 {
+            /*GuiGraphicsExtractor guiGraphics, float partialTick, int mouseX, int mouseY, CallbackInfo ci
+            *///?} else
+            GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci
+    ) {
         if (selectedTab instanceof CreativeMenuTab<?> menuTab)
             menuTab.render(this, guiGraphics, partialTick, mouseX, mouseY);
     }
@@ -224,7 +247,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
 
     @Inject(method = "checkTabHovering", at = @At("HEAD"), cancellable = true)
     private void checkMenuTabHovering(
-            GuiGraphics guiGraphics,
+            GuiGraphicsExtractor guiGraphics,
             CreativeModeTab tab,
             int mouseX,
             int mouseY,
@@ -240,20 +263,20 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     @WrapOperation(
             method = "slotClicked", at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/inventory/InventoryMenu;clicked(IILnet/minecraft/world/inventory/ClickType;Lnet/minecraft/world/entity/player/Player;)V")
+            target = "Lnet/minecraft/world/inventory/InventoryMenu;clicked(IILnet/minecraft/world/inventory/ContainerInput;Lnet/minecraft/world/entity/player/Player;)V")
     )
     private void modifyInventoryClick(
             InventoryMenu instance,
             int slotIndex,
             int mouseButton,
-            ClickType clickType,
+            ContainerInput clickType,
             Player player,
             Operation<Void> original,
             @Local(argsOnly = true) @Nullable Slot slot
     ) {
         if (!(selectedTab instanceof CreativeMenuTab<?> menuTab)) {
             original.call(instance, slotIndex, mouseButton, clickType, player);
-        } else if (clickType == ClickType.QUICK_MOVE && (mouseButton == 0 || mouseButton == 1) && slotIndex >= 0) {
+        } else if (clickType == ContainerInput.QUICK_MOVE && (mouseButton == 0 || mouseButton == 1) && slotIndex >= 0) {
             CreativeMenuTab.CreativeTabMenu<?> tabMenu = menuTab.getMenu();
             if (slot != null && slot.container instanceof Inventory) {
                 ItemStack itemStack = tabMenu.quickMoveFromInventory(player, slotIndex);
@@ -266,11 +289,11 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     @Definition(id = "destroyItemSlot", field = "Lnet/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen;destroyItemSlot:Lnet/minecraft/world/inventory/Slot;")
     @Expression("? == this.destroyItemSlot")
     @WrapOperation(method = "slotClicked", at = @At(value = "MIXINEXTRAS:EXPRESSION", ordinal = 0))
-    private boolean clearMenuTabSlots(Object left, Object right, Operation<Boolean> original, @Local(argsOnly = true) ClickType clickType) {
+    private boolean clearMenuTabSlots(Object left, Object right, Operation<Boolean> original, @Local(argsOnly = true) ContainerInput clickType) {
         boolean base = original.call(left, right);
         if (!base) return false;
         if (!(selectedTab instanceof CreativeMenuTab)) return true;
-        if (clickType == ClickType.QUICK_MOVE)
+        if (clickType == ContainerInput.QUICK_MOVE)
             this.menu.slots.forEach(slot -> {
                 if (slot.mayPlace(ItemStack.EMPTY))
                     slot.set(ItemStack.EMPTY);
@@ -492,11 +515,16 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     }
 
     @WrapOperation(
-            method = "renderBg", at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/inventory/InventoryScreen;renderEntityInInventoryFollowsMouse(Lnet/minecraft/client/gui/GuiGraphics;IIIIIFFFLnet/minecraft/world/entity/LivingEntity;)V"
+            //? if < 26 {
+            /*method = "renderBg", at = @At(
+            target = "Lnet/minecraft/client/gui/screens/inventory/InventoryScreen;renderEntityInInventoryFollowsMouse(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIIIIFFFLnet/minecraft/world/entity/LivingEntity;)V",
+            *///?} else {
+            method = "extractBackground", at = @At(
+            target = "Lnet/minecraft/client/gui/screens/inventory/InventoryScreen;extractEntityInInventoryFollowsMouse(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIIIIFFFLnet/minecraft/world/entity/LivingEntity;)V",
+            //?}
+            value = "INVOKE"
     ))
-    private static void movePaperDoll(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int a, float b, float c, float d, LivingEntity livingEntity, Operation<Void> original) {
+    private static void movePaperDoll(GuiGraphicsExtractor guiGraphics, int x1, int y1, int x2, int y2, int a, float b, float c, float d, LivingEntity livingEntity, Operation<Void> original) {
         if (selectedTab instanceof CreativeMenuTab) return;
         if (ModConfig.HANDLER.instance().inventoryCraftingGrid)
             original.call(guiGraphics, x1 - 27, y1, x2 - 27, y2, a, b, c, d, livingEntity);
@@ -504,7 +532,10 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     }
 
     @WrapOperation(
-            method = "renderBg", at = @At(
+            //? if < 26 {
+            /*method = "renderBg", at = @At(
+            *///?} else
+            method = "extractBackground", at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/item/CreativeModeTab;getBackgroundTexture()Lnet/minecraft/resources/Identifier;"
     ))

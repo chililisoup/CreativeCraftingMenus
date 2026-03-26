@@ -2,7 +2,7 @@ package dev.chililisoup.creativecraftingmenus.gui;
 
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
 import dev.chililisoup.creativecraftingmenus.config.ModConfig;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -115,7 +115,7 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
         titleDrawer.draw(x, y, color);
     }
 
-    public void render(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {}
+    public void render(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, float partialTick, int mouseX, int mouseY) {}
 
     public static abstract class CreativeTabMenu<M extends CreativeTabMenu<M>> extends AbstractContainerMenu {
         protected final Player player;

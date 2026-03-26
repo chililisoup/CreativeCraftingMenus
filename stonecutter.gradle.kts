@@ -4,7 +4,7 @@ plugins {
     id("dev.kikugie.fletching-table.fabric") version "0.1.0-alpha.22" apply false
 }
 
-stonecutter active "1.21.11"
+stonecutter active "26.1"
 
 // See https://stonecutter.kikugie.dev/wiki/config/params
 stonecutter parameters {
@@ -32,6 +32,25 @@ stonecutter parameters {
         string(current.parsed >= "1.21.11") {
             replace("ResourceLocation", "Identifier")
             replace(".location()", ".identifier()")
+        }
+
+        string(current.parsed >= "26") {
+            replace("classTweaker v1 named", "classTweaker v1 official")
+            replace("GuiGraphics", "GuiGraphicsExtractor")
+            replace("guiGraphics.renderItem(", "guiGraphics.item(")
+            replace("guiGraphics.drawString(", "guiGraphics.text(")
+            replace("guiGraphics.drawCenteredString(", "guiGraphics.centeredText(")
+            replace("guiGraphics.submitEntityRenderState(", "guiGraphics.entity(")
+            replace("guiGraphics.submitBannerPatternRenderState(", "guiGraphics.bannerPattern(")
+            replace("ClickType", "ContainerInput")
+            replace(
+                "net.fabricmc.fabric.impl.client.itemgroup.FabricCreativeGuiComponents",
+                "net.fabricmc.fabric.impl.client.creativetab.FabricCreativeGuiComponents"
+            )
+            replace(
+                "FabricCreativeGuiComponents.COMMON_GROUPS",
+                "FabricCreativeGuiComponents.COMMON_TABS"
+            )
         }
     }
 }

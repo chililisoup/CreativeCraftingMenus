@@ -6,7 +6,7 @@ import dev.chililisoup.creativecraftingmenus.config.ModConfig;
 import dev.chililisoup.creativecraftingmenus.util.ServerResourceProvider;
 import dev.chililisoup.creativecraftingmenus.util.VersionHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
@@ -24,7 +24,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.*;
-import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import org.jetbrains.annotations.NotNull;
@@ -55,6 +54,7 @@ import net.minecraft.client.model.object.banner.BannerFlagModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -84,7 +84,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
     private int startIndex;
     private BannerFlagModel flag;
     private BannerFlagModel smallFlag;
-    private ItemStack randomPresetBanner = Items.WHITE_BANNER.getDefaultInstance();
+    private @Nullable ItemStack randomPresetBanner = null;
     private long randomPresetBannerTimer = System.currentTimeMillis();
     private boolean builtInGroups = true;
     private @Nullable EditBox groupNameBox;
@@ -163,7 +163,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
     }
 
     @Override
-    public void render(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    public void render(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, float partialTick, int mouseX, int mouseY) {
         if (this.menu == null || this.groupNameBox == null) return;
 
         ItemStack itemStack = this.menu.resultSlots.getItem(0);
@@ -220,12 +220,16 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         else this.renderSecondaryPresetsPageContents(screen, guiGraphics, mouseX, mouseY);
     }
 
-    private void renderBannerOnButton(GuiGraphics guiGraphics, int x, int y, Holder<@NotNull BannerPattern> pattern) {
+    private void renderBannerOnButton(GuiGraphicsExtractor guiGraphics, int x, int y, Holder<@NotNull BannerPattern> pattern) {
         //? if >= 1.21.6 {
-        //? if > 1.21.6 {
-        TextureAtlasSprite textureAtlasSprite = guiGraphics.getSprite(Sheets.getBannerMaterial(pattern));
-        //?} else
-        //TextureAtlasSprite textureAtlasSprite = Sheets.getBannerMaterial(pattern).sprite();
+        TextureAtlasSprite textureAtlasSprite =
+                //? if > 26 {
+                guiGraphics.getSprite(Sheets.getBannerSprite(pattern));
+                //?} elif > 1.21.6 {
+                /*guiGraphics.getSprite(Sheets.getBannerMaterial(pattern));
+                *///?} else
+                //Sheets.getBannerMaterial(pattern).sprite();
+        
         guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(x + 4, y + 2);
         float u0 = textureAtlasSprite.getU0();
@@ -265,7 +269,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
     }
 
     private static void renderBanner(
-            GuiGraphics guiGraphics,
+            GuiGraphicsExtractor guiGraphics,
             BannerFlagModel flag,
             DyeColor baseColor,
             BannerPatternLayers resultBannerPatterns,
@@ -275,7 +279,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
             int y1
     ) {
         //? if >= 1.21.6 {
-        guiGraphics.submitBannerPatternRenderState(flag /*? if 1.21.6 {*//*.root()*//*?}*/, baseColor, resultBannerPatterns, x0, y0, x1, y1);
+        guiGraphics.bannerPattern(flag /*? if 1.21.6 {*//*.root()*//*?}*/, baseColor, resultBannerPatterns, x0, y0, x1, y1);
          //?} else {
         /*guiGraphics.flush();
         Lighting.setupForFlatItems();
@@ -307,17 +311,17 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         *///?}
     }
 
-    private void renderDyeIcon(GuiGraphics guiGraphics, DyeColor color, int x, int y) {
+    private void renderDyeIcon(GuiGraphicsExtractor guiGraphics, DyeColor color, int x, int y) {
         if (ModConfig.HANDLER.instance().dyeItemColorIcons) {
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().translate(x + 1, y /*? < 1.21.6 {*//*, 0*//*?}*/);
             guiGraphics.pose().scale(3F / 4F /*? < 1.21.6 {*//*, 3F / 4F, 3F / 4F*//*?}*/);
-            guiGraphics.renderItem(DyeItem.byColor(color).getDefaultInstance(), 0, 0);
+            guiGraphics.item(VersionHelper.getDyeItem(color).getDefaultInstance(), 0, 0);
             guiGraphics.pose().popMatrix();
         } else guiGraphics.fill(x + 2, y + 2, x + 12, y + 12, color.getTextureDiffuseColor());
     }
 
-    private void renderScrollBar(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderScrollBar(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         int x = screen.leftPos + 83;
         int y = screen.topPos + 13 + (int) (41F * this.scrollOffs);
 
@@ -336,7 +340,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         //?}
     }
 
-    private void renderButtons(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderButtons(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         int left = screen.leftPos + 99;
         int top = screen.topPos + (ModConfig.HANDLER.instance().altLoomMenu ? 67 : 8);
 
@@ -386,7 +390,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         }
     }
 
-    private void renderDyes(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderDyes(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         if (this.menu == null) return;
 
         DyeColor dyeColor = this.menu.getColors().get(this.selectedLayer + 1);
@@ -405,7 +409,8 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
             if (hovered) {
                 //? if > 1.21.6
                 if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
-                guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, DyeItem.byColor(color).getName(), mouseX, mouseY);
+                Item dyeItem = VersionHelper.getDyeItem(color);
+                guiGraphics.setTooltipForNextFrame(Minecraft.getInstance().font, dyeItem.getName(dyeItem.getDefaultInstance()), mouseX, mouseY);
             }
 
             guiGraphics.blitSprite(
@@ -421,7 +426,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         }
     }
 
-    private void renderPageContents(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderPageContents(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         if (this.menu == null) return;
 
         int left = screen.leftPos + 24;
@@ -504,10 +509,14 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                 if (hovered) {
                     //? if > 1.21.6
                     if (!selected) guiGraphics.requestCursor(CursorTypes.POINTING_HAND);
+                    Item bannerItem = instance.menu.getBannerItem();
                     guiGraphics.setTooltipForNextFrame(
                             Minecraft.getInstance().font,
                             i == 0 ?
-                                    instance.menu.getBannerItem().getName() :
+                                    bannerItem.getName(
+                                            //? if >= 26
+                                            bannerItem.getDefaultInstance()
+                                    ) :
                                     Component.translatable(pattern.value().translationKey() + "." + dyeColor.getName()),
                             mouseX,
                             mouseY
@@ -554,7 +563,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                         6
                 );
 
-                guiGraphics.drawString(Minecraft.getInstance().font, (i > 0) ? String.valueOf(i) : "-", left + 3, y + 3, 0xFFFFFFFF);
+                guiGraphics.text(Minecraft.getInstance().font, (i > 0) ? String.valueOf(i) : "-", left + 3, y + 3, 0xFFFFFFFF);
                 instance.renderBannerOnButton(guiGraphics, left + 14, y, pattern);
                 instance.renderDyeIcon(guiGraphics, dyeColor, left + 28, y);
             }
@@ -667,7 +676,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                 );
 
                 //? if 1.21.6 {
-                /*guiGraphics.renderItem(banner.item(), x - 2, y + 3);
+                /*guiGraphics.item(banner.item(), x - 2, y + 3);
                 *///?} else {
                 renderBanner(
                         guiGraphics,
@@ -684,7 +693,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         };
     }
 
-    private void renderSecondaryPresetsPageContents(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderSecondaryPresetsPageContents(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         if (this.menu == null) return;
 
         int left = screen.leftPos + 100;
@@ -1129,7 +1138,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
     private enum Page {
         PATTERN(
                 Component.translatable("container.creative_crafting_menus.loom.pattern"),
-                (instance, guiGraphics) -> guiGraphics.renderItem(Items.CREEPER_BANNER_PATTERN.getDefaultInstance(), 0, 0),
+                (instance, guiGraphics) -> guiGraphics.item(Items.CREEPER_BANNER_PATTERN.getDefaultInstance(), 0, 0),
                 LoomMenuTab::getPatternPageRenderer,
                 LoomMenuTab::checkPatternPageClicked,
                 instance -> (instance.patterns.size() - 13) / 4,
@@ -1147,7 +1156,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         ),
         PRESETS(
                 Component.translatable("container.creative_crafting_menus.loom.presets"),
-                (instance, guiGraphics) -> guiGraphics.renderItem(instance.randomPresetBanner, 0, 0),
+                (instance, guiGraphics) -> guiGraphics.item(
+                        Optional.ofNullable(instance.randomPresetBanner).orElse(Items.WHITE_BANNER.getDefaultInstance()), 0, 0
+                ),
                 LoomMenuTab::getPresetsPageRenderer,
                 LoomMenuTab::checkPresetsPageClicked,
                 instance -> {
@@ -1165,7 +1176,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         );
 
         private final Component tooltip;
-        private final BiConsumer<LoomMenuTab, GuiGraphics> iconRenderer;
+        private final BiConsumer<LoomMenuTab, GuiGraphicsExtractor> iconRenderer;
         private final Function<LoomMenuTab, RenderFunction> rendererSupplier;
         private final ClickChecker clickChecker;
         private final Function<LoomMenuTab, Integer> getOffscreenRows;
@@ -1173,7 +1184,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
 
         Page(
                 final Component tooltip,
-                final BiConsumer<LoomMenuTab, GuiGraphics> iconRenderer,
+                final BiConsumer<LoomMenuTab, GuiGraphicsExtractor> iconRenderer,
                 final Function<LoomMenuTab, RenderFunction> rendererSupplier,
                 final ClickChecker clickChecker,
                 final Function<LoomMenuTab, Integer> getOffscreenRows,
@@ -1190,7 +1201,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         private interface RenderFunction {
             RenderFunction EMPTY = (guiGraphics, left, top, mouseX, mouseY) -> {};
 
-            void render(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY);
+            void render(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY);
         }
 
         private interface ClickChecker {
@@ -1295,7 +1306,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
             if (itemStack.isEmpty()) return;
 
             if (layer < 0) {
-                ItemStack swapped = BannerBlock.byColor(color).asItem().getDefaultInstance();
+                ItemStack swapped = VersionHelper.getBannerItem(color).getDefaultInstance();
                 swapped.applyComponents(itemStack.getComponentsPatch());
 
                 this.resultSlots.setItem(0, swapped);

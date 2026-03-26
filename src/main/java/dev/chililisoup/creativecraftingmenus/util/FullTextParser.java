@@ -22,7 +22,13 @@ public final class FullTextParser {
     private static final NodeParser PARSER;
 
     public static Component formatText(String text) {
-        Component formatted = PARSER.parseText(text, ParserContext.of());
+        Component formatted = PARSER
+                //? if >= 26 {
+                .parseComponent(
+                //?} else
+                //.parseText(
+                        text, ParserContext.of()
+                );
         return formatted.copy().setStyle(formatted.getStyle().withItalic(
                 formatted.getStyle().isItalic() ? null : false
         ));
@@ -63,7 +69,12 @@ public final class FullTextParser {
         }
 
         //? if > 1.21.6 {
-        if (contents instanceof ObjectContents(ObjectInfo objectInfo)) {
+        if (contents instanceof ObjectContents(
+                //? if >= 26 {
+                ObjectInfo objectInfo, Optional<Component> fallback
+                //?} else
+                //ObjectInfo objectInfo
+        )) {
             if (objectInfo instanceof PlayerSprite(ResolvableProfile player, boolean hat)) {
                 var profile = player.unpack();
 

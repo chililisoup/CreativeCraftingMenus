@@ -3,7 +3,7 @@ package dev.chililisoup.creativecraftingmenus.reg;
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
 import dev.chililisoup.creativecraftingmenus.gui.*;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.impl.client.itemgroup.FabricCreativeGuiComponents;
+import net.fabricmc.fabric.impl.client.creativetab.FabricCreativeGuiComponents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -59,7 +59,7 @@ public class CreativeMenuTabs {
                 .build();
 
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, id, menuTab);
-        FabricCreativeGuiComponents.COMMON_GROUPS.add(menuTab);
+        FabricCreativeGuiComponents.COMMON_TABS.add(menuTab);
         return menuTab;
     }
 

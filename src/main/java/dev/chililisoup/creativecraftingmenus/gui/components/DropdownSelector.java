@@ -2,7 +2,7 @@ package dev.chililisoup.creativecraftingmenus.gui.components;
 
 import dev.chililisoup.creativecraftingmenus.util.VersionHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.inventory.StonecutterScreen;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -86,9 +86,17 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
     }
 
     @Override
-    public void renderWidget(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    //? if >= 26 {
+    public void extractWidgetRenderState(
+    //?} else
+    //public void renderWidget(
+            @NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick
+    ) {
         if (!this.open) {
-            this.renderListBackground(guiGraphics);
+            //? if >= 26 {
+            this.extractListBackground(guiGraphics);
+            //?} else
+            //this.renderListBackground(guiGraphics);
 
             if (mouseX >= this.getX() && mouseY >= this.getY() && mouseX < this.getRight() && mouseY < this.getBottom()) {
                 guiGraphics.fill(
@@ -118,7 +126,13 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
 
         //? if > 1.21.6
         if (this.isHovered()) guiGraphics.requestCursor(CursorType.DEFAULT);
-        super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);
+
+        //? if >= 26 {
+        super.extractWidgetRenderState(
+        //?} else
+        //super.renderWidget(
+                guiGraphics, mouseX, mouseY, partialTick
+        );
     }
 
     @Override
@@ -209,9 +223,18 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
         return this.getRight() + 3;
     }
 
+
     @Override
-    protected int scrollBarY() {
-        return this.scrollbarVisible() ? super.scrollBarY() : this.getY();
+    //? if >= 26 {
+    public int scrollBarY() {
+    //?} else
+    //protected int scrollBarY() {
+        return
+                //? if >= 26 {
+                this.scrollable() ?
+                //?} else
+                //this.scrollbarVisible() ?
+                        super.scrollBarY() : this.getY();
     }
 
     @Override
@@ -234,15 +257,24 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
     *///?}
 
     @Override
-    protected void renderScrollbar(
+    //? if >= 26 {
+    protected void extractScrollbar(
+    //?} else
+    //protected void renderScrollbar(
             //? if > 1.21.6 {
-            @NotNull GuiGraphics guiGraphics, int mouseX, int mouseY
+            @NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY
             //?} else
-            //@NotNull GuiGraphics guiGraphics
+            //@NotNull GuiGraphicsExtractor guiGraphics
     ) {
+        boolean scrollable =
+                //? if >= 26 {
+                this.scrollable();
+                //?} else
+                //this.scrollbarVisible();
+
         guiGraphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
-                this.scrollbarVisible() ? StonecutterScreen.SCROLLER_SPRITE : StonecutterScreen.SCROLLER_DISABLED_SPRITE,
+                scrollable ? StonecutterScreen.SCROLLER_SPRITE : StonecutterScreen.SCROLLER_DISABLED_SPRITE,
                 this.scrollBarX(),
                 this.scrollBarY(),
                 12,
@@ -250,7 +282,7 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
         );
 
         //? if > 1.21.6 {
-        if (this.scrollbarVisible() && this.isOverScrollbar(mouseX, mouseY))
+        if (scrollable && this.isOverScrollbar(mouseX, mouseY))
             guiGraphics.requestCursor(this.scrolling ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
         //?}
     }
@@ -271,9 +303,14 @@ public class DropdownSelector<T> extends ObjectSelectionList<DropdownSelector.En
 
         @Override
         //? if > 1.21.6 {
-        public void renderContent(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, boolean hovered, float partialTick) {
+        //? if >= 26 {
+        public void extractContent(
         //?} else
-        //public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovered, float partialTick) {
+        //public void renderContent(
+                @NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, boolean hovered, float partialTick
+        ) {
+        //?} else
+        //public void render(GuiGraphicsExtractor guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovered, float partialTick) {
             //? if > 1.21.6 {
             int left = this.getContentX();
             int top = this.getContentY();

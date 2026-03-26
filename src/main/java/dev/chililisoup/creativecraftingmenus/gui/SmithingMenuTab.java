@@ -6,7 +6,7 @@ import dev.chililisoup.creativecraftingmenus.util.ServerResourceProvider;
 import dev.chililisoup.creativecraftingmenus.util.MenuHelper;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -47,7 +47,8 @@ import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.SCROL
 import static net.minecraft.client.gui.screens.inventory.StonecutterScreen.SCROLLER_SPRITE;
 
 //? if > 1.21.4 {
-import net.minecraft.world.item.component.ProvidesTrimMaterial;
+//? if < 26
+//import net.minecraft.world.item.component.ProvidesTrimMaterial;
 import net.minecraft.resources.ResourceKey;
 //?}
 
@@ -142,9 +143,17 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                         //? if > 1.21.4 {
                         ItemStack iconStack = ItemStack.EMPTY;
                         for (Item item : materialItems) {
-                            ProvidesTrimMaterial materialProvider = item.components().get(DataComponents.PROVIDES_TRIM_MATERIAL);
+                            //? if >= 26 {
+                            Holder<TrimMaterial> materialProvider =
+                            //?} else
+                            //ProvidesTrimMaterial materialProvider =
+                                    item.components().get(DataComponents.PROVIDES_TRIM_MATERIAL);
                             if (materialProvider == null) continue;
-                            Optional<ResourceKey<@NotNull TrimMaterial>> key = materialProvider.material().key();
+                            Optional<ResourceKey<@NotNull TrimMaterial>> key = materialProvider
+                                    //? if >= 26 {
+                                    .unwrapKey();
+                                    //?} else
+                                    //.material().key();
                             if (key.isPresent() && patternRef.is(key.get())) {
                                 iconStack = item.getDefaultInstance();
                                 break;
@@ -162,7 +171,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     }
 
     @Override
-    public void render(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    public void render(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, float partialTick, int mouseX, int mouseY) {
         this.renderScrollBar(screen, guiGraphics, mouseX, mouseY);
 
         renderArmorStand(
@@ -196,15 +205,15 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                     16,
                     18
             );
-            guiGraphics.renderItem(page.icon, x, y + 1);
+            guiGraphics.item(page.iconSupplier.get(), x, y + 1);
         }
 
         this.renderPageContents(screen, guiGraphics, mouseX, mouseY);
     }
 
-    private static void renderArmorStand(GuiGraphics guiGraphics, ArmorStandRenderState renderState, float scale, int left, int top, int right, int bottom) {
+    private static void renderArmorStand(GuiGraphicsExtractor guiGraphics, ArmorStandRenderState renderState, float scale, int left, int top, int right, int bottom) {
         //? if >= 1.21.6 {
-        guiGraphics.submitEntityRenderState(
+        guiGraphics.entity(
                 renderState, scale, ARMOR_STAND_TRANSLATION, ARMOR_STAND_ANGLE, null, left, top, right, bottom
         );
         //?} else {
@@ -229,7 +238,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         *///?}
     }
 
-    private void renderScrollBar(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderScrollBar(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         int x = screen.leftPos + 118;
         int y = screen.topPos + 16 + (int) (39F * this.scrollOffs);
 
@@ -248,7 +257,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         //?}
     }
 
-    private void renderPageContents(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderPageContents(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         if (this.menu == null) return;
 
         for (int i = this.startIndex; i < this.pageContents.size() && i < 12 + this.startIndex; i++) {
@@ -291,7 +300,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                         ItemStack itemStack = template.getSecond();
                         if (itemStack.isEmpty())
                             guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, PLACEHOLDER_TRIM, x, y, 16, 16);
-                        else guiGraphics.renderItem(itemStack, x, y);
+                        else guiGraphics.item(itemStack, x, y);
                     },
                     trim == null ?
                             pattern == null :
@@ -314,7 +323,7 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
                         ItemStack itemStack = template.getSecond();
                         if (itemStack.isEmpty())
                             guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, PLACEHOLDER_TRIM, x, y, 16, 16);
-                        else guiGraphics.renderItem(itemStack, x, y);
+                        else guiGraphics.item(itemStack, x, y);
                     },
                     trim == null ?
                             material == null :
@@ -327,7 +336,12 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         if (instance.menu == null) return List.of();
 
         ItemStack itemStack = instance.menu.getSlot(1).getItem();
-        List<TagKey<@NotNull Item>> tags = itemStack.getTags().toList();
+        List<TagKey<@NotNull Item>> tags = itemStack
+                //? if >= 26 {
+                .tags()
+                //?} else
+                //.getTags()
+                .toList();
         if (itemStack.is(Items.TIPPED_ARROW)) {
             tags = new ArrayList<>(tags);
             tags.add(ConventionalItemTags.POTIONS);
@@ -343,8 +357,11 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
 
                 return list.stream().map(
                         tagItem -> new Page.PageItem(
-                                tagItem.getName(),
-                                (guiGraphics, x, y) -> guiGraphics.renderItem(tagItem.getDefaultInstance(), x, y),
+                                tagItem.getName(
+                                        //? if >= 26
+                                        tagItem.getDefaultInstance()
+                                ),
+                                (guiGraphics, x, y) -> guiGraphics.item(tagItem.getDefaultInstance(), x, y),
                                 itemStack.is(tagItem)
                         )
                 ).toList();
@@ -372,7 +389,12 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
         if (instance.menu == null) return List.of();
 
         ItemStack itemStack = instance.menu.getSlot(1).getItem();
-        List<TagKey<@NotNull Item>> tags = itemStack.getTags().toList();
+        List<TagKey<@NotNull Item>> tags = itemStack
+                //? if >= 26 {
+                .tags()
+                //?} else
+                //.getTags()
+                .toList();
         if (itemStack.is(Items.TIPPED_ARROW)) {
             tags = new ArrayList<>(tags);
             tags.add(ConventionalItemTags.POTIONS);
@@ -576,42 +598,42 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     private enum Page {
         TRIM_PATTERN(
                 Component.translatable("container.creative_crafting_menus.smithing.trim_pattern"),
-                Items.SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE.getDefaultInstance(),
+                Items.SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE::getDefaultInstance,
                 SmithingMenuTab::getTrimPatternPageContents,
                 SmithingMenuTab::getTrimPatternPageClickActions
         ),
         TRIM_MATERIAL(
                 Component.translatable("container.creative_crafting_menus.smithing.trim_material"),
-                Items.AMETHYST_SHARD.getDefaultInstance(),
+                Items.AMETHYST_SHARD::getDefaultInstance,
                 SmithingMenuTab::getTrimMaterialPageContents,
                 SmithingMenuTab::getTrimMaterialPageClickActions
         ),
         ITEM_MATERIAL(
                 Component.translatable("container.creative_crafting_menus.smithing.item_material"),
-                Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE.getDefaultInstance(),
+                Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE::getDefaultInstance,
                 SmithingMenuTab::getItemMaterialPageContents,
                 SmithingMenuTab::getItemMaterialPageClickActions
         );
 
         private final Component tooltip;
-        private final ItemStack icon;
+        private final Supplier<ItemStack> iconSupplier;
         private final Function<SmithingMenuTab, List<PageItem>> contentsSupplier;
         private final Function<SmithingMenuTab, List<Runnable>> clickActionSupplier;
 
         Page(
                 final Component tooltip,
-                final ItemStack icon,
+                final Supplier<ItemStack> iconSupplier,
                 final Function<SmithingMenuTab, List<PageItem>> contentsSupplier,
                 final Function<SmithingMenuTab, List<Runnable>> clickActionSupplier
         ) {
             this.tooltip = tooltip;
-            this.icon = icon;
+            this.iconSupplier = iconSupplier;
             this.clickActionSupplier = clickActionSupplier;
             this.contentsSupplier = contentsSupplier;
         }
 
         private interface RenderFunction {
-            void render(GuiGraphics guiGraphics, int x, int y);
+            void render(GuiGraphicsExtractor guiGraphics, int x, int y);
         }
 
         private record PageItem(Component tooltip, RenderFunction iconRenderer, boolean selected) {}

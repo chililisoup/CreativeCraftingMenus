@@ -122,7 +122,10 @@ public final class ServerResourceProvider {
     private static RecipeManager createVanillaRecipeManager() {
         PackRepository packRepository =
                 /*? if < 1.21.11 {*/ /*ModResourcePackUtil *//*?} else {*/ ModPackResourcesUtil /*?}*/
-                .createClientManager();
+                //? if >= 26 {
+                .createModdedRepository();
+                //?} else
+                //.createClientManager();
 
         MinecraftServer.configurePackRepository(
                 packRepository, WorldDataConfiguration.DEFAULT, false, false

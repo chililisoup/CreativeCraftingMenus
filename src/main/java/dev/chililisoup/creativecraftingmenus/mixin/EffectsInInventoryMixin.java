@@ -30,7 +30,7 @@ public abstract class EffectsInInventoryMixin {
     @Definition(id = "imageWidth", field = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;imageWidth:I")
     @Expression("this.screen.imageWidth")
     @ModifyExpressionValue(
-            method = /*? if < 1.21.11 {*/ /*"renderEffects" *//*?} else {*/ "render" /*?}*/,
+            method = /*? if < 1.21.11 {*//*"renderEffects"*//*?} elif < 26 {*//*"render"*//*?} else {*/"extractRenderState"/*?}*/,
             at = @At("MIXINEXTRAS:EXPRESSION")
     )
     private int adjustRenderX(int original) {

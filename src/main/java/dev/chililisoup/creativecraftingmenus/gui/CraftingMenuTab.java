@@ -1,7 +1,6 @@
 package dev.chililisoup.creativecraftingmenus.gui;
 
 import dev.chililisoup.creativecraftingmenus.util.ServerResourceProvider;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.Container;
@@ -14,6 +13,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.function.Supplier;
+
+//? if < 26 {
+/*import net.minecraft.core.HolderLookup;
+*///?}
 
 public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTabMenu> {
     public CraftingMenuTab(Component displayName, Supplier<ItemStack> iconGenerator, String id) {
@@ -79,8 +82,10 @@ public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTab
         public void slotsChanged(@NotNull Container container) {
             RecipeManager recipeManager = ServerResourceProvider.getRecipeManager();
             if (recipeManager == null) return;
-            HolderLookup.Provider provider = ServerResourceProvider.registryAccess();
+            //? if < 26 {
+            /*HolderLookup.Provider provider = ServerResourceProvider.registryAccess();
             if (provider == null) return;
+            *///?}
 
             Level level = this.player.level();
             CraftingInput craftingInput = this.craftSlots.asCraftInput();
@@ -92,7 +97,12 @@ public class CraftingMenuTab extends CreativeMenuTab<CraftingMenuTab.CraftingTab
                 RecipeHolder<@NotNull CraftingRecipe> recipeHolder2 = optional.get();
                 CraftingRecipe craftingRecipe = recipeHolder2.value();
                 this.resultSlots.setRecipeUsed(recipeHolder2);
-                itemStack = craftingRecipe.assemble(craftingInput, provider);
+                itemStack = craftingRecipe.assemble(
+                        //? if >= 26 {
+                        craftingInput
+                        //?} else
+                        //craftingInput, provider
+                );
             }
 
             this.resultSlots.setItem(0, itemStack);

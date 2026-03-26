@@ -19,11 +19,23 @@ stonecutter {
     centralScript = "build.gradle.kts"
 
     create(rootProject) {
-        versions("1.21.4", "1.21.5", "1.21.6", "1.21.10", "1.21.11")
+        fun targeting(vararg targets: String) =
+            targets.forEach { version(it).buildscript(when {
+                it < "26" -> "build.gradle.kts"
+                else -> "build-deobf.gradle.kts"
+            }) }
 
-        vcsVersion = "1.21.11"
+        targeting(
+            "1.21.4",
+            "1.21.5",
+            "1.21.6",
+            "1.21.10",
+            "1.21.11",
+            "26.1"
+        )
+
+        vcsVersion = "26.1"
     }
 }
 
 rootProject.name = "CreativeCraftingMenus"
-

@@ -9,7 +9,7 @@ import dev.chililisoup.creativecraftingmenus.util.ServerResourceProvider;
 import dev.chililisoup.creativecraftingmenus.util.VersionHelper;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
@@ -116,7 +116,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
     }
 
     @Override
-    public void render(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    public void render(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, float partialTick, int mouseX, int mouseY) {
         if (this.menu == null || this.nameLoreBox == null) return;
 
         for (int i = 0; i < Page.values().length; i++) {
@@ -141,7 +141,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
                     18
             );
 
-            guiGraphics.renderItem(page.icon, x, y + 1);
+            guiGraphics.item(page.iconSupplier.get(), x, y + 1);
         }
 
         if (this.selectedPage != Page.NAME_LORE && (this.enchantSelector == null || !this.enchantSelector.visible || !this.enchantSelector.open))
@@ -149,7 +149,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
         this.renderPageContents(screen, guiGraphics, mouseX, mouseY);
     }
 
-    private void renderScrollBar(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderScrollBar(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         int x = screen.leftPos + 177;
         int y = screen.topPos + 14 + (int) (41F * this.scrollOffs);
 
@@ -168,7 +168,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
         //?}
     }
 
-    private void renderPageContents(AbstractContainerScreen<?> screen, GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderPageContents(AbstractContainerScreen<?> screen, GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         if (this.menu == null) return;
 
         int left = screen.leftPos + 51;
@@ -208,7 +208,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
                     11
             );
 
-            guiGraphics.drawString(Minecraft.getInstance().font, "?", x + 3, y + 2, -1);
+            guiGraphics.text(Minecraft.getInstance().font, "?", x + 3, y + 2, -1);
         };
     }
 
@@ -269,7 +269,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
                             14
                     );
 
-                    guiGraphics.drawCenteredString(
+                    guiGraphics.centeredText(
                             Minecraft.getInstance().font,
                             String.valueOf(enchant.getIntValue()),
                             left + 113,
@@ -539,7 +539,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
     private enum Page {
         NAME_LORE(
                 Component.translatable("container.creative_crafting_menus.anvil.name_lore"),
-                Items.OAK_SIGN.getDefaultInstance(),
+                Items.OAK_SIGN::getDefaultInstance,
                 AnvilMenuTab::getNameLorePageRenderer,
                 AnvilMenuTab::checkNameLorePageClicked,
                 instance -> 0,
@@ -547,7 +547,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
         ),
         ENCHANTMENTS(
                 Component.translatable("container.creative_crafting_menus.anvil.enchantments"),
-                Items.ENCHANTED_BOOK.getDefaultInstance(),
+                Items.ENCHANTED_BOOK::getDefaultInstance,
                 AnvilMenuTab::getEnchantmentsPageRenderer,
                 AnvilMenuTab::checkEnchantmentsPageClicked,
                 instance -> instance.menu != null ?
@@ -558,7 +558,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
         );
 
         private final Component tooltip;
-        private final ItemStack icon;
+        private final Supplier<ItemStack> iconSupplier;
         private final Function<AnvilMenuTab, RenderFunction> rendererSupplier;
         private final ClickChecker clickChecker;
         private final Function<AnvilMenuTab, Integer> getOffscreenRows;
@@ -566,14 +566,14 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
 
         Page(
                 final Component tooltip,
-                final ItemStack icon,
+                final Supplier<ItemStack> iconSupplier,
                 final Function<AnvilMenuTab, RenderFunction> rendererSupplier,
                 final ClickChecker clickChecker,
                 final Function<AnvilMenuTab, Integer> getOffscreenRows,
                 final Function<AnvilMenuTab, Integer> getColumns
                 ) {
             this.tooltip = tooltip;
-            this.icon = icon;
+            this.iconSupplier = iconSupplier;
             this.clickChecker = clickChecker;
             this.rendererSupplier = rendererSupplier;
             this.getOffscreenRows = getOffscreenRows;
@@ -583,7 +583,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
         private interface RenderFunction {
             RenderFunction EMPTY = (guiGraphics, left, top, mouseX, mouseY) -> {};
 
-            void render(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY);
+            void render(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY);
         }
 
         private interface ClickChecker {

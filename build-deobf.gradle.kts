@@ -1,7 +1,7 @@
 plugins {
     id("java-library")
     id("idea")
-    id("fabric-loom")
+    id("net.fabricmc.fabric-loom")
     kotlin("jvm")
     id("com.google.devtools.ksp")
     id("dev.kikugie.stonecutter")
@@ -44,18 +44,13 @@ fletchingTable {
 
 dependencies {
     minecraft("com.mojang:minecraft:${deps.minecraft}")
-    @Suppress("UnstableApiUsage")
-    mappings(loom.layered {
-        officialMojangMappings()
-        mod.prop("deps.parchment") { parchment("org.parchmentmc.data:parchment-${deps.minecraft}:${it}@zip") }
-    })
 
-    modImplementation("net.fabricmc:fabric-loader:${deps.fabricLoader}")
-    modApi("net.fabricmc.fabric-api:fabric-api:${deps.fabricApi}")
-    modImplementation("dev.isxander:yet-another-config-lib:${deps.yacl}-fabric")
-    modImplementation("eu.pb4:placeholder-api:${deps.placeholderApi}")
+    implementation("net.fabricmc:fabric-loader:${deps.fabricLoader}")
+    api("net.fabricmc.fabric-api:fabric-api:${deps.fabricApi}")
+    implementation("dev.isxander:yet-another-config-lib:${deps.yacl}-fabric")
+    implementation("eu.pb4:placeholder-api:${deps.placeholderApi}")
 
-    modCompileOnly("com.terraformersmc:modmenu:${deps.modmenu}")
+    compileOnly("com.terraformersmc:modmenu:${deps.modmenu}")
 }
 
 java {

@@ -1,6 +1,7 @@
 package dev.chililisoup.creativecraftingmenus.config;
 
 import dev.chililisoup.creativecraftingmenus.util.ServerResourceProvider;
+import dev.chililisoup.creativecraftingmenus.util.VersionHelper;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -9,7 +10,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import org.jetbrains.annotations.NotNull;
@@ -177,7 +177,7 @@ public abstract class BannerPresets {
         BannerPresetItem(DyeColor color, BannerPatternLayers layers) {
             this.color = color;
             this.layers = layers;
-            this.item = BannerBlock.byColor(this.color).asItem().getDefaultInstance();
+            this.item = VersionHelper.getBannerItem(this.color).getDefaultInstance();
             this.item.set(DataComponents.BANNER_PATTERNS, layers);
         }
 
