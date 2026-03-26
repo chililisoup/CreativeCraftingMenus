@@ -14,7 +14,7 @@ idea {
 class ModDeps {
     val fabricLoader = project.property("deps.fabric_loader") as String
     val minecraft = project.property("deps.minecraft") as String
-    val minecraftRange = project.property("deps.minecraft") as String
+    val minecraftRange = project.property("deps.minecraft_range") as String
 
     val fabricApi = project.property("deps.fabric_api") as String
     val yacl = project.property("deps.yacl") as String
