@@ -1,16 +1,9 @@
 package dev.chililisoup.creativecraftingmenus.util;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
-import java.util.stream.Collectors;
 
 //? if <= 1.21.6 {
 /*import net.minecraft.client.gui.screens.Screen;
@@ -24,7 +17,15 @@ import net.minecraft.client.gui.components.AbstractWidget;
 //? if < 26 {
 /*import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.item.DyeItem;
-*///?}
+*///?} else {
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.item.BannerItem;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
+import java.util.stream.Collectors;
+//?}
 
 public final class VersionHelper {
     //? if >= 26 {
