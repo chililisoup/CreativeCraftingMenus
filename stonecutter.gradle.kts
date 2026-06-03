@@ -1,5 +1,5 @@
 plugins {
-    id("fabric-loom") version "1.15-SNAPSHOT" apply false
+    id("fabric-loom") version "1.16-SNAPSHOT" apply false
     id("dev.kikugie.stonecutter")
     id("dev.kikugie.fletching-table.fabric") version "0.1.0-alpha.22" apply false
 }
@@ -35,7 +35,7 @@ stonecutter parameters {
         }
 
         string(current.parsed >= "26") {
-            replace("classTweaker v1 named", "classTweaker v1 official")
+            replace("classTweaker v2 named", "classTweaker v2 official")
             replace("GuiGraphics", "GuiGraphicsExtractor")
             replace("guiGraphics.renderItem(", "guiGraphics.item(")
             replace("guiGraphics.drawString(", "guiGraphics.text(")
@@ -53,10 +53,6 @@ stonecutter parameters {
             )
         }
     }
-}
-
-stonecutter handlers {
-    inherit("accesswidener", "classtweaker")
 }
 
 allprojects {

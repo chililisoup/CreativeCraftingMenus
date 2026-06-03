@@ -4,6 +4,7 @@
   "mixinextras": {
     "minVersion": "0.5.0"
   },
+  "plugin": "dev.chililisoup.creativecraftingmenus.CreativeCraftingMenusMixinConfigPlugin",
   "package": "dev.chililisoup.creativecraftingmenus.mixin",
   "compatibilityLevel": "${compatibility_level}",
   "injectors": {

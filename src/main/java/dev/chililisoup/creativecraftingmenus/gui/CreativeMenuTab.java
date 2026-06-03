@@ -40,7 +40,7 @@ public abstract class CreativeMenuTab<M extends CreativeMenuTab.CreativeTabMenu<
 
     CreativeMenuTab(Component displayName, Supplier<ItemStack> iconGenerator, String id) {
         //noinspection DataFlowIssue
-        super(null, -1, Type.INVENTORY, displayName, iconGenerator, CreativeModeTab.Builder.EMPTY_GENERATOR);
+        super(null, -1, Type.CREATIVE_CRAFTING_MENUS_MENU, displayName, iconGenerator, CreativeModeTab.Builder.EMPTY_GENERATOR);
         this.id = id;
     }
 

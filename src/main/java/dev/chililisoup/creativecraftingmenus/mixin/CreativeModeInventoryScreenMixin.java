@@ -1,7 +1,9 @@
 package dev.chililisoup.creativecraftingmenus.mixin;
 
+import com.google.common.collect.ImmutableList;
 import com.llamalad7.mixinextras.expression.Definition;
 import com.llamalad7.mixinextras.expression.Expression;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -20,10 +22,9 @@ import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -35,6 +36,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -42,6 +44,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.List;
 
 //? if >= 1.21.11 {
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
@@ -51,8 +55,8 @@ import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.minecraft.client.input.CharacterEvent;
 //?}
 
-import java.util.List;
-
+//? if >= 26
+@SuppressWarnings({"NameDoesntMatchTargetClass", "LocalMayUseName"})
 @Mixin(value = CreativeModeInventoryScreen.class, priority = 999)
 public abstract class CreativeModeInventoryScreenMixin extends AbstractContainerScreen<CreativeModeInventoryScreen.@NotNull ItemPickerMenu> {
     @Unique private static final Identifier CRAFTING_INVENTORY_BACKGROUND =
@@ -66,20 +70,31 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
         super(abstractContainerMenu, inventory, component);
     }
 
+    @Shadow @Final
+    //? if >= 26
+    private
+    static SimpleContainer CONTAINER;
     @Shadow protected abstract void selectTab(CreativeModeTab tab);
-    @Shadow protected abstract boolean checkTabClicked(CreativeModeTab tab, double x, double y);
+    @Shadow protected abstract boolean checkTabClicked(CreativeModeTab tab, double xm, double ym);
     @Shadow protected abstract int getTabX(CreativeModeTab tab);
     @Shadow protected abstract int getTabY(CreativeModeTab tab);
     @Shadow public abstract boolean isInventoryOpen();
     @Shadow private static CreativeModeTab selectedTab;
     @Shadow private CreativeInventoryListener listener;
     @Shadow private EditBox searchBox;
+    @Shadow private @Nullable List<Slot> originalSlots;
+    @Shadow private @Nullable Slot destroyItemSlot;
+
+    @Unique
+    private void setImageHeight(int imageHeight) {
+        this.imageHeight = imageHeight;
+        this.topPos = (this.height - this.imageHeight) / 2;
+        if (this.searchBox != null) this.searchBox.setY(this.topPos + 6);
+    }
 
     @Unique
     private void resetHeight() {
-        this.imageHeight = 136;
-        this.topPos = (this.height - this.imageHeight) / 2;
-        if (this.searchBox != null) this.searchBox.setY(this.topPos + 6);
+        this.setImageHeight(136);
     }
 
     @Inject(
@@ -120,11 +135,16 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
 
     @Inject(method = "selectTab", at = @At("TAIL"))
     private void makeAdjustments(CreativeModeTab tab, CallbackInfo ci) {
-        if (tab instanceof CreativeMenuTab<?> newTab && Minecraft.getInstance().screen == this) {
-            this.imageHeight = 166;
-            this.topPos = (this.height - this.imageHeight) / 2;
-            if (this.listener != null) newTab.subInit();
-        } else this.resetHeight();
+        int targetHeight;
+        if (tab instanceof CreativeMenuTab<?> newTab && Minecraft.getInstance().screen == this && this.listener != null) {
+            newTab.subInit();
+            targetHeight = 166;
+        } else targetHeight = 136;
+
+        if (this.imageHeight != targetHeight) {
+            this.setImageHeight(targetHeight);
+            this.repositionElements();
+        }
     }
 
     @Inject(method = "removed", at = @At("TAIL"))
@@ -289,7 +309,9 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     @Definition(id = "destroyItemSlot", field = "Lnet/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen;destroyItemSlot:Lnet/minecraft/world/inventory/Slot;")
     @Expression("? == this.destroyItemSlot")
     @WrapOperation(method = "slotClicked", at = @At(value = "MIXINEXTRAS:EXPRESSION", ordinal = 0))
-    private boolean clearMenuTabSlots(Object left, Object right, Operation<Boolean> original, @Local(argsOnly = true) ContainerInput clickType) {
+    private boolean clearMenuTabSlots(
+            Object left, Object right, Operation<Boolean> original, @Local(argsOnly = true) ContainerInput clickType
+    ) {
         boolean base = original.call(left, right);
         if (!base) return false;
         if (!(selectedTab instanceof CreativeMenuTab)) return true;
@@ -438,17 +460,23 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
         );
     }
 
-    @WrapOperation(
-            method = "selectTab", at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/core/NonNullList;size()I"
-    ))
-    private int positionMenuTabInventorySlots(NonNullList<?> instance, Operation<Integer> original, @Local AbstractContainerMenu abstractContainerMenu) {
-        if (!(selectedTab instanceof CreativeMenuTab)) return original.call(instance);
+    @Definition(id = "oldTab", local = @Local(type = CreativeModeTab.class, ordinal = 1))
+    @Definition(id = "getType", method = "Lnet/minecraft/world/item/CreativeModeTab;getType()Lnet/minecraft/world/item/CreativeModeTab$Type;")
+    @Definition(id = "INVENTORY", field = "Lnet/minecraft/world/item/CreativeModeTab$Type;INVENTORY:Lnet/minecraft/world/item/CreativeModeTab$Type;")
+    @Expression("oldTab.getType() == INVENTORY")
+    @ModifyExpressionValue(method = "selectTab", at = @At("MIXINEXTRAS:EXPRESSION"))
+    private boolean setupMenuTab(boolean original, @Local(ordinal = 1) CreativeModeTab oldTab) {
+        if (!(selectedTab instanceof CreativeMenuTab<?> menuTab))
+            return original || oldTab.getType() == CreativeModeTab.Type.CREATIVE_CRAFTING_MENUS_MENU;
+
+        if (this.minecraft.player == null) return false;
+        AbstractContainerMenu invMenu = this.minecraft.player.inventoryMenu;
+        if (this.originalSlots == null) this.originalSlots = ImmutableList.copyOf(this.menu.slots);
+        this.menu.slots.clear();
 
         for (int i = 9; i < 45; i++) {
             CreativeModeInventoryScreen.SlotWrapper wrapped = new CreativeModeInventoryScreen.SlotWrapper(
-                    abstractContainerMenu.slots.get(i),
+                    invMenu.slots.get(i),
                     i,
                     9 + (i % 9) * 18,
                     i >= 36 ? 142 : 66 + (i / 9) * 18
@@ -457,41 +485,17 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             this.menu.slots.add(wrapped);
         }
 
-        return 0;
-    }
+        this.destroyItemSlot = new Slot(CONTAINER, 0, 173, 142);
+        this.menu.slots.add(this.destroyItemSlot);
 
-    @Definition(id = "add", method = "Lnet/minecraft/core/NonNullList;add(Ljava/lang/Object;)Z")
-    @Definition(id = "destroyItemSlot", field = "Lnet/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen;destroyItemSlot:Lnet/minecraft/world/inventory/Slot;")
-    @Expression("?.add(this.destroyItemSlot)")
-    @WrapOperation(
-            method = "selectTab", at = @At(
-            value = "MIXINEXTRAS:EXPRESSION"
-    ))
-    private boolean addMenuTabSlots(NonNullList<@NotNull Object> instance, Object o, Operation<Boolean> original) {
-        boolean result = original.call(instance, o);
-        if (selectedTab instanceof CreativeMenuTab<?> menuTab)
-            menuTab.getMenu().slots.forEach(slot -> {
-                CreativeModeInventoryScreen.SlotWrapper wrapped =
-                        new CreativeModeInventoryScreen.SlotWrapper(slot, slot.index, slot.x, slot.y);
-                wrapped.index = this.menu.slots.size();
-                this.menu.slots.add(wrapped);
-            });
-        return result;
-    }
+        menuTab.getMenu().slots.forEach(slot -> {
+            CreativeModeInventoryScreen.SlotWrapper wrapped =
+                    new CreativeModeInventoryScreen.SlotWrapper(slot, slot.index, slot.x, slot.y);
+            wrapped.index = this.menu.slots.size();
+            this.menu.slots.add(wrapped);
+        });
 
-    @Inject(method = "isInventoryOpen", at = @At("HEAD"), cancellable = true)
-    private void ignoreMenuTabs(CallbackInfoReturnable<Boolean> cir) {
-        if (selectedTab instanceof CreativeMenuTab) cir.setReturnValue(false);
-    }
-
-    @WrapOperation(
-            method = "selectTab", at = @At(
-            value = "NEW",
-            target = "(Lnet/minecraft/world/Container;III)Lnet/minecraft/world/inventory/Slot;"
-    ))
-    private static Slot moveDestroyItemSlot(Container container, int index, int x, int y, Operation<Slot> original) {
-        if (selectedTab instanceof CreativeMenuTab) y += 30;
-        return original.call(container, index, x, y);
+        return false;
     }
 
     @WrapOperation(
@@ -525,7 +529,6 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
             value = "INVOKE"
     ))
     private static void movePaperDoll(GuiGraphicsExtractor guiGraphics, int x1, int y1, int x2, int y2, int a, float b, float c, float d, LivingEntity livingEntity, Operation<Void> original) {
-        if (selectedTab instanceof CreativeMenuTab) return;
         if (ModConfig.HANDLER.instance().inventoryCraftingGrid)
             original.call(guiGraphics, x1 - 27, y1, x2 - 27, y2, a, b, c, d, livingEntity);
         else original.call(guiGraphics, x1, y1, x2, y2, a, b, c, d, livingEntity);
@@ -546,5 +549,30 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
         else return this.isInventoryOpen() && ModConfig.HANDLER.instance().inventoryCraftingGrid ?
                 CRAFTING_INVENTORY_BACKGROUND :
                 original.call(instance);
+    }
+
+    @WrapOperation(
+            method = "slotClicked", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/item/CreativeModeTab;getType()Lnet/minecraft/world/item/CreativeModeTab$Type;"
+    ))
+    private CreativeModeTab.Type wrapSlotClickedInventoryCheck(CreativeModeTab instance, Operation<CreativeModeTab.Type> original) {
+        CreativeModeTab.Type type = original.call(instance);
+        return type == CreativeModeTab.Type.CREATIVE_CRAFTING_MENUS_MENU ?
+                CreativeModeTab.Type.INVENTORY : type;
+    }
+
+    @WrapOperation(
+            //? if < 26 {
+            /*method = "render", at = @At(
+            *///?} else
+            method = "extractRenderState", at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/item/CreativeModeTab;getType()Lnet/minecraft/world/item/CreativeModeTab$Type;"
+    ))
+    private CreativeModeTab.Type wrapRenderInventoryCheck(CreativeModeTab instance, Operation<CreativeModeTab.Type> original) {
+        CreativeModeTab.Type type = original.call(instance);
+        return type == CreativeModeTab.Type.CREATIVE_CRAFTING_MENUS_MENU ?
+                CreativeModeTab.Type.INVENTORY : type;
     }
 }

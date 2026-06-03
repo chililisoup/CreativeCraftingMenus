@@ -181,7 +181,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
         if (instance.menu == null) return Page.RenderFunction.EMPTY;
 
         return (guiGraphics, left, top, mouseX, mouseY) -> {
-            int x = left + 113;
+            int x = left + 108;
             int y = top - 11;
 
             boolean hovered = mouseX >= x && mouseY >= y && mouseX < x + 11 && mouseY < y + 11;
@@ -272,7 +272,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
                     guiGraphics.centeredText(
                             Minecraft.getInstance().font,
                             String.valueOf(enchant.getIntValue()),
-                            left + 113,
+                            left + 108,
                             y + 3,
                             -1
                     );
@@ -314,7 +314,7 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
 
         double mouseX = mouseButtonEvent.x();
         double mouseY = mouseButtonEvent.y();
-        int x = left + 113;
+        int x = left + 108;
         int y = top - 11;
 
         if (mouseX >= x && mouseY >= y && mouseX < x + 11 && mouseY < y + 11) return () -> {

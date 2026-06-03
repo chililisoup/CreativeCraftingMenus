@@ -23,7 +23,7 @@
   },
   "accessWidener" : "${mod_id}.classtweaker",
   "depends": {
-    "fabricloader": ">=0.18",
+    "fabricloader": ">=0.19",
     "minecraft": "${minecraft_range}",
     "fabric-api": "*",
     "yet_another_config_lib_v3": "*",

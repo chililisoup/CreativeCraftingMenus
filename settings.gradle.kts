@@ -11,7 +11,7 @@ pluginManagement {
 plugins {
     kotlin("jvm") version "2.3.20" apply false
     id("com.google.devtools.ksp") version "2.3.6" apply false
-    id("dev.kikugie.stonecutter") version "0.9.1-beta.2"
+    id("dev.kikugie.stonecutter") version "0.9.4"
 }
 
 stonecutter {

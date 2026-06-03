@@ -51,6 +51,7 @@ dependencies {
     implementation("eu.pb4:placeholder-api:${deps.placeholderApi}")
 
     compileOnly("com.terraformersmc:modmenu:${deps.modmenu}")
+    mod.prop("deps.trinkets") { compileOnly("eu.pb4:trinkets:${it}") }
 }
 
 java {
