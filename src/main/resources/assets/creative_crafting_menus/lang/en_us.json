@@ -34,6 +34,8 @@
   "creative_crafting_menus.config.tabSpacingX.desc": "Horizontal spacing around the creative menu crafting tabs",
   "creative_crafting_menus.config.tabSpacingY": "Vertical Tab Spacing",
   "creative_crafting_menus.config.tabSpacingY.desc": "Vertical spacing around the creative menu crafting tabs",
+  "creative_crafting_menus.config.tabAlignment": "Tab alignment",
+  "creative_crafting_menus.config.tabAlignment.desc": "The side to put the creative menu crafting tabs on",
   "creative_crafting_menus.config.tabToggles": "Tab Visibility Toggles",
   "creative_crafting_menus.config.tabToggles.desc": "Hide/show this creative menu crafting tab",
   "creative_crafting_menus.config.dyeItemColorIcons": "Dye Item Color Icons",

@@ -136,8 +136,8 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     @Inject(method = "selectTab", at = @At("TAIL"))
     private void makeAdjustments(CreativeModeTab tab, CallbackInfo ci) {
         int targetHeight;
-        if (tab instanceof CreativeMenuTab<?> newTab && Minecraft.getInstance().screen == this && this.listener != null) {
-            newTab.subInit();
+        if (tab instanceof CreativeMenuTab<?> newTab && Minecraft.getInstance().screen == this) {
+            if (this.listener != null) newTab.subInit();
             targetHeight = 166;
         } else targetHeight = 136;
 
@@ -154,8 +154,13 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
 
     @Inject(method = "getTabX", at = @At("HEAD"), cancellable = true)
     private void getMenuTabX(CreativeModeTab tab, CallbackInfoReturnable<Integer> cir) {
-        if (tab instanceof CreativeMenuTab)
-            cir.setReturnValue(this.imageWidth + ModConfig.HANDLER.instance().tabSpacingX);
+        if (tab instanceof CreativeMenuTab) {
+            ModConfig config = ModConfig.HANDLER.instance();
+            cir.setReturnValue(config.tabAlignment == ModConfig.Alignment.RIGHT ?
+                    this.imageWidth + config.tabSpacingX :
+                    -config.tabSpacingX - 26
+            );
+        }
     }
 
     @Inject(method = "getTabY", at = @At("HEAD"), cancellable = true)

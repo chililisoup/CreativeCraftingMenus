@@ -3,6 +3,7 @@ package dev.chililisoup.creativecraftingmenus.config;
 import dev.chililisoup.creativecraftingmenus.CreativeCraftingMenus;
 import dev.chililisoup.creativecraftingmenus.reg.CreativeMenuTabs;
 import dev.isxander.yacl3.api.*;
+import dev.isxander.yacl3.api.controller.EnumControllerBuilder;
 import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
 import dev.isxander.yacl3.api.controller.TickBoxControllerBuilder;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
@@ -34,6 +35,9 @@ public class ModConfig {
 
     @SerialEntry
     public int tabSpacingY = 9;
+
+    @SerialEntry
+    public Alignment tabAlignment = Alignment.RIGHT;
 
     @SerialEntry(comment = "Disabled creative menu crafting tabs")
     public HashSet<String> disabledTabs = new HashSet<>();
@@ -99,6 +103,19 @@ public class ModConfig {
                                         .step(1)
                                         .formatValue(val -> Component.literal(val + "px")))
                                 .build())
+                        .option(Option.<Alignment>createBuilder()
+                                .name(Component.translatable("creative_crafting_menus.config.tabAlignment"))
+                                .description(OptionDescription.of(Component.translatable("creative_crafting_menus.config.tabAlignment.desc")))
+                                .binding(
+                                        HANDLER.defaults().tabAlignment,
+                                        () -> this.tabAlignment,
+                                        newVal -> {
+                                            this.tabAlignment = newVal;
+                                            HANDLER.save();
+                                        })
+                                .controller(opt -> EnumControllerBuilder.create(opt)
+                                        .enumClass(Alignment.class))
+                                .build())
                         .group(() -> {
                             OptionGroup.Builder builder = OptionGroup.createBuilder()
                                     .name(Component.translatable("creative_crafting_menus.config.tabToggles"));
@@ -156,5 +173,16 @@ public class ModConfig {
                         .build())
                 .build()
                 .generateScreen(parentScreen);
+    }
+
+    @SuppressWarnings("unused")
+    public enum Alignment implements NameableEnum {
+        LEFT,
+        RIGHT;
+
+        @Override
+        public Component getDisplayName() {
+            return Component.translatable("options.mainHand." + name().toLowerCase());
+        }
     }
 }

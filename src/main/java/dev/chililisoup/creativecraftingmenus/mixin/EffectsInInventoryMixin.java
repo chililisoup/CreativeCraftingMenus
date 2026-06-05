@@ -21,8 +21,10 @@ public abstract class EffectsInInventoryMixin {
     @Expression("this.screen.imageWidth")
     @ModifyExpressionValue(method = "canSeeEffects", at = @At("MIXINEXTRAS:EXPRESSION"))
     private int adjustCanSeeEffectsX(int original) {
-        return screen instanceof CreativeModeInventoryScreen ?
-                original + 24 + 2 * ModConfig.HANDLER.instance().tabSpacingX :
+        if (!(this.screen instanceof CreativeModeInventoryScreen)) return original;
+        ModConfig config = ModConfig.HANDLER.instance();
+        return config.tabAlignment == ModConfig.Alignment.RIGHT ?
+                original + 24 + 2 * config.tabSpacingX :
                 original;
     }
 
@@ -34,8 +36,10 @@ public abstract class EffectsInInventoryMixin {
             at = @At("MIXINEXTRAS:EXPRESSION")
     )
     private int adjustRenderX(int original) {
-        return screen instanceof CreativeModeInventoryScreen ?
-                original + 24 + 2 * ModConfig.HANDLER.instance().tabSpacingX :
+        if (!(this.screen instanceof CreativeModeInventoryScreen)) return original;
+        ModConfig config = ModConfig.HANDLER.instance();
+        return config.tabAlignment == ModConfig.Alignment.RIGHT ?
+                original + 24 + 2 * config.tabSpacingX :
                 original;
     }
 }
