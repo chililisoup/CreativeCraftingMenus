@@ -136,7 +136,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     @Inject(method = "selectTab", at = @At("TAIL"))
     private void makeAdjustments(CreativeModeTab tab, CallbackInfo ci) {
         int targetHeight;
-        if (tab instanceof CreativeMenuTab<?> newTab && Minecraft.getInstance().screen == this) {
+        if (tab instanceof CreativeMenuTab<?> newTab && Minecraft.getInstance().gui.screen() == this) {
             if (this.listener != null) newTab.subInit();
             targetHeight = 166;
         } else targetHeight = 136;
@@ -191,7 +191,7 @@ public abstract class CreativeModeInventoryScreenMixin extends AbstractContainer
     private void renderMenuTabButton(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, CreativeModeTab tab, CallbackInfo ci) {
         if (!(tab instanceof CreativeMenuTab)) return;
 
-        boolean selected = tab == selectedTab && Minecraft.getInstance().screen == this;
+        boolean selected = tab == selectedTab && Minecraft.getInstance().gui.screen() == this;
         int x = this.getTabX(tab) + this.leftPos;
         int y = this.getTabY(tab) + this.topPos;
         Identifier sprite = selected ? SELECTED_MENU_TAB : UNSELECTED_MENU_TAB;

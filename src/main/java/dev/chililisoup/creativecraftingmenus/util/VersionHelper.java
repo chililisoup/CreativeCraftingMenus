@@ -17,19 +17,21 @@ import net.minecraft.client.gui.components.AbstractWidget;
 //? if < 26 {
 /*import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.item.DyeItem;
-*///?} else {
-import net.minecraft.core.component.DataComponents;
+*///?} elif < 26.2 {
+/*import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.BannerItem;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.stream.Collectors;
+*///?} else {
+import net.minecraft.world.item.Items;
 //?}
 
 public final class VersionHelper {
-    //? if >= 26 {
-    private static @Nullable Map<DyeColor, Item> DYE_ITEMS = null;
+    //? if >= 26 && < 26.2 {
+    /*private static @Nullable Map<DyeColor, Item> DYE_ITEMS = null;
     private static @Nullable Map<DyeColor, Item> BANNER_ITEMS = null;
 
     private static Map<DyeColor, Item> getDyeItemMap() {
@@ -49,19 +51,23 @@ public final class VersionHelper {
         ));
         return BANNER_ITEMS;
     }
-    //?}
+    *///?}
 
     public static Item getDyeItem(DyeColor color) {
-        //? if >= 26 {
-        return getDyeItemMap().get(color);
-        //?} else
+        //? if >= 26.2 {
+        return Items.DYE.pick(color);
+        //?} elif >= 26 {
+        /*return getDyeItemMap().get(color);
+        *///?} else
         //return DyeItem.byColor(color);
     }
 
     public static Item getBannerItem(DyeColor color) {
-        //? if >= 26 {
-        return getBannerItemMap().get(color);
-        //?} else
+        //? if >= 26.2 {
+        return Items.BANNER.pick(color);
+        //?} elif >= 26 {
+        /*return getBannerItemMap().get(color);
+        *///?} else
         //return BannerBlock.byColor(color).asItem();
     }
 

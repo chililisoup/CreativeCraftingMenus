@@ -1157,7 +1157,9 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         PRESETS(
                 Component.translatable("container.creative_crafting_menus.loom.presets"),
                 (instance, guiGraphics) -> guiGraphics.item(
-                        Optional.ofNullable(instance.randomPresetBanner).orElse(Items.WHITE_BANNER.getDefaultInstance()), 0, 0
+                        Optional.ofNullable(instance.randomPresetBanner).orElse(
+                                VersionHelper.getBannerItem(DyeColor.WHITE).getDefaultInstance()
+                        ), 0, 0
                 ),
                 LoomMenuTab::getPresetsPageRenderer,
                 LoomMenuTab::checkPresetsPageClicked,
@@ -1230,7 +1232,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
                 }
             });
 
-            this.resultSlots.setItem(0, Items.WHITE_BANNER.getDefaultInstance());
+            this.resultSlots.setItem(0, VersionHelper.getBannerItem(DyeColor.WHITE).getDefaultInstance());
         }
 
         @Override
@@ -1344,7 +1346,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
         }
 
         private void resetBanner() {
-            this.resultSlots.setItem(0, Items.WHITE_BANNER.getDefaultInstance());
+            this.resultSlots.setItem(0, VersionHelper.getBannerItem(DyeColor.WHITE).getDefaultInstance());
             LoomMenuTab.this.update();
         }
 
@@ -1363,7 +1365,7 @@ public class LoomMenuTab extends CreativeMenuTab<LoomMenuTab.LoomTabMenu> {
             Item item = this.resultSlots.getItem(0).getItem();
             if (item instanceof BannerItem bannerItem) return bannerItem;
 
-            BannerItem bannerItem = (BannerItem) Items.WHITE_BANNER;
+            BannerItem bannerItem = (BannerItem) VersionHelper.getBannerItem(DyeColor.WHITE);
             this.resultSlots.setItem(0, bannerItem.getDefaultInstance());
             LoomMenuTab.this.update();
             return bannerItem;

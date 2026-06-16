@@ -24,7 +24,6 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ResultContainer;
@@ -59,6 +58,12 @@ import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.world.phys.Vec3;
+*///?}
+
+//? if >= 26.2 {
+import net.minecraft.world.entity.EntityTypes;
+//?} else {
+/*import net.minecraft.world.entity.EntityType;
 *///?}
 
 public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTabMenu> {
@@ -96,8 +101,10 @@ public class SmithingMenuTab extends CreativeMenuTab<SmithingMenuTab.SmithingTab
     public SmithingMenuTab(Component displayName, Supplier<ItemStack> iconGenerator, String id) {
         super(displayName, iconGenerator, id);
 
-        //? if >= 1.21.6
-        this.armorStandPreview.entityType = EntityType.ARMOR_STAND;
+        //? if >= 26.2 {
+        this.armorStandPreview.entityType = EntityTypes.ARMOR_STAND;
+        //?} elif >= 1.21.6
+        //this.armorStandPreview.entityType = EntityType.ARMOR_STAND;
         this.armorStandPreview.showBasePlate = false;
         this.armorStandPreview.showArms = true;
         this.armorStandPreview.xRot = 25F;

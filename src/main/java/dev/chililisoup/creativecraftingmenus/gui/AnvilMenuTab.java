@@ -320,9 +320,9 @@ public class AnvilMenuTab extends CreativeMenuTab<AnvilMenuTab.AnvilTabMenu> {
         if (mouseX >= x && mouseY >= y && mouseX < x + 11 && mouseY < y + 11) return () -> {
             URI url = URI.create("https://placeholders.pb4.eu/user/quicktext/");
 
-            Minecraft.getInstance().setScreen(new ConfirmLinkScreen(open -> {
+            Minecraft.getInstance().gui.setScreen(new ConfirmLinkScreen(open -> {
                 if (open) Util.getPlatform().openUri(url);
-                Minecraft.getInstance().setScreen(instance.screen);
+                Minecraft.getInstance().gui.setScreen(instance.screen);
             }, url.toString(), false));
         };
 

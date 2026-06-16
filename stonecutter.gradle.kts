@@ -4,7 +4,7 @@ plugins {
     id("dev.kikugie.fletching-table.fabric") version "0.1.0-alpha.22" apply false
 }
 
-stonecutter active "26.1"
+stonecutter active "26.2"
 
 // See https://stonecutter.kikugie.dev/wiki/config/params
 stonecutter parameters {
@@ -51,6 +51,11 @@ stonecutter parameters {
                 "FabricCreativeGuiComponents.COMMON_GROUPS",
                 "FabricCreativeGuiComponents.COMMON_TABS"
             )
+        }
+
+        string(current.parsed >= "26.2") {
+            replace("Minecraft.getInstance().screen", "Minecraft.getInstance().gui.screen()")
+            replace("Minecraft.getInstance().setScreen", "Minecraft.getInstance().gui.setScreen")
         }
     }
 }

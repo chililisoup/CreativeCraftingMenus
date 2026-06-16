@@ -24,8 +24,6 @@ accessible method net/minecraft/world/inventory/AbstractContainerMenu dropOrPlac
 accessible field net/minecraft/client/gui/screens/inventory/AnvilScreen TEXT_FIELD_SPRITE Lnet/minecraft/resources/Identifier;
 accessible field net/minecraft/client/gui/screens/inventory/AnvilScreen TEXT_FIELD_DISABLED_SPRITE Lnet/minecraft/resources/Identifier;
 accessible field net/minecraft/client/gui/screens/inventory/AnvilScreen ERROR_SPRITE Lnet/minecraft/resources/Identifier;
-accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ARMOR_STAND_TRANSLATION Lorg/joml/Vector3f;
-accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ARMOR_STAND_ANGLE Lorg/joml/Quaternionf;
 accessible field net/minecraft/client/gui/screens/inventory/StonecutterScreen SCROLLER_SPRITE Lnet/minecraft/resources/Identifier;
 accessible field net/minecraft/client/gui/screens/inventory/StonecutterScreen SCROLLER_DISABLED_SPRITE Lnet/minecraft/resources/Identifier;
 accessible field net/minecraft/client/gui/screens/inventory/LoomScreen SCROLLER_SPRITE Lnet/minecraft/resources/Identifier;
@@ -55,3 +53,11 @@ accessible class net/minecraft/world/item/component/ResolvableProfile$Partial
 
 #? if >= 26
 mutable field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen imageHeight I
+
+#? if >= 26.2 {
+accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ARMOR_STAND_TRANSLATION Lorg/joml/Vector3fc;
+accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ARMOR_STAND_ANGLE Lorg/joml/Quaternionfc;
+#?} else {
+#accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ARMOR_STAND_TRANSLATION Lorg/joml/Vector3f;
+#accessible field net/minecraft/client/gui/screens/inventory/SmithingScreen ARMOR_STAND_ANGLE Lorg/joml/Quaternionf;
+#?}
